@@ -1,0 +1,10 @@
+.vs
+.idea
+.vscode
+bin-int
+bin/*.exe
+bin/*.cso
+bin/*.pdb
+bin/imgui.ini
+DirectXSandbox/bin
+DirectXSandbox/bin-int
