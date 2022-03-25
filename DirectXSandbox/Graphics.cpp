@@ -1,20 +1,15 @@
 ﻿#include "Graphics.h"
 
 #include <Mouse.h>
-#include <fmt/format.h>
 
 #include "Keyboard.h"
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_win32.h"
-#include "ImGui/imgui_impl_dx11.h"
 #include "Engine.h"
 #include "Logger.h"
+#include "Gui.h"
 
 Graphics::~Graphics()
 {
-    ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
+    Gui::Shutdown();
 
     m_depthStencilBuffer->Release();
     m_depthStencilView->Release();
@@ -40,101 +35,7 @@ void Graphics::Initialize(HWND hWnd, int width, int height)
 
     if (!SetupScene()) exit(-1);
 
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui_ImplWin32_Init(hWnd);
-    ImGui_ImplDX11_Init(m_device, m_deviceContext);
-    ImGui::StyleColorsLight();
-    ImGui::GetStyle().ScaleAllSizes(2);
-    io.FontGlobalScale = 1.5f;
-}
-
-void Graphics::Resize(int width, int height)
-{
-    LOG_INFO("Window resized...");
-
-    m_width = width;
-    m_height = height;
-
-    LOG_INFO("Deleting scene...");
-    DeleteScene();
-
-    LOG_INFO("Shutting down ImGui...");
-    ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
-
-    m_deviceContext->OMSetRenderTargets(0, 0, 0);
-
-    m_depthStencilState->Release();
-    m_depthStencilView->Release();
-    m_depthStencilBuffer->Release();
-    m_renderTargetView->Release();
-    
-	m_deviceContext->Flush();
-
-    HRESULT hr;
-
-    hr = m_swapChain->ResizeBuffers(1, m_width, m_height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
-    if (FAILED(hr))
-    {
-        LOG_ERROR_HR("Failed to resize buffers", hr);
-    }
-
-    ID3D11Texture2D* backBuffer;
-    m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
-    hr = m_device->CreateRenderTargetView(backBuffer, NULL, &m_renderTargetView);
-    if (FAILED(hr))
-    {
-        LOG_ERROR_HR("Failed to create render target view", hr);
-    }
-    backBuffer->Release();
-
-    CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D24_UNORM_S8_UINT, m_width, m_height, 1, 1);
-    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    hr = m_device->CreateTexture2D(&depthStencilDesc, 0, &m_depthStencilBuffer);
-    if (FAILED(hr))
-    {
-        LOG_ERROR_HR("Failed to create depth stencil buffer", hr);
-    }
-
-    hr = m_device->CreateDepthStencilView(m_depthStencilBuffer, 0, &m_depthStencilView);
-    if (FAILED(hr))
-    {
-        LOG_ERROR_HR("Failed to create depth stencil view", hr);
-    }
-
-    D3D11_DEPTH_STENCIL_DESC depthStencilStateDesc{};
-    depthStencilStateDesc.DepthEnable = true;
-    depthStencilStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    depthStencilStateDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-    hr = m_device->CreateDepthStencilState(&depthStencilStateDesc, &m_depthStencilState);
-    if (FAILED(hr))
-    {
-        LOG_ERROR_HR("Failed to create depth stencil state", hr);
-    }
-
-    m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
-
-    CD3D11_VIEWPORT vp(0.f, 0.f, (float)m_width, (float)m_height);
-    m_deviceContext->RSSetViewports(1, &vp);
-
-    m_camera.SetProjectionValues(90.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 100000.0f);
-
-    LOG_INFO("Intializing ImGui...");
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui_ImplWin32_Init(m_hwnd);
-    ImGui_ImplDX11_Init(m_device, m_deviceContext);
-    ImGui::StyleColorsLight();
-    ImGui::GetStyle().ScaleAllSizes(2);
-    io.FontGlobalScale = 1.5f;
-
-    LOG_INFO("Resize complete.");
+    Gui::Setup(hWnd, m_device, m_deviceContext);
 }
 
 void Graphics::UpdateScene(float dt)
@@ -189,153 +90,13 @@ void Graphics::RenderFrame()
     if (!m_globalCBuffer.ApplyChanges()) return;
     m_deviceContext->VSSetConstantBuffers(0, 1, m_globalCBuffer.GetBuffer());
 
-    m_psAmbientLightCBuffer.ApplyChanges();
-    m_deviceContext->PSSetConstantBuffers(0, 1, m_psAmbientLightCBuffer.GetBuffer());
-
-    m_psPointLightCBuffer.ApplyChanges();
-    m_deviceContext->PSSetConstantBuffers(1, 1, m_psPointLightCBuffer.GetBuffer());
+    m_ambientLight.ApplyBuffer(0);
+    m_pointLight.ApplyBuffer(1);
+    m_spotLight.ApplyBuffer(2);
 
     m_gameObject.Render();
 
-#pragma region ImGui
-
-    static bool showWindowControls = false;
-    static bool showAmbientLight = false;
-    static bool showPointLight = false;
-    static bool showOverlay = true;
-
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
-
-    ImGui::BeginMainMenuBar();
-    {
-	    if (ImGui::BeginMenu("Window"))
-	    {
-            ImGui::Checkbox("Window Controls", &showWindowControls);
-            ImGui::Checkbox("Ambient Light", &showAmbientLight);
-            ImGui::Checkbox("Point Light", &showPointLight);
-            ImGui::Checkbox("Overlay", &showOverlay);
-
-            ImGui::EndMenu();
-	    }
-
-        if (ImGui::BeginMenu("Resolution"))
-        {
-            if (ImGui::MenuItem("900x600")) Engine::QueueResize(900, 600);
-            if (ImGui::MenuItem("1920x1080")) Engine::QueueResize(1920, 1080);
-            if (ImGui::MenuItem("2560x1440")) Engine::QueueResize(2560, 1440);
-            if (ImGui::MenuItem("2560x1600")) Engine::QueueResize(2560, 1600);
-            if (ImGui::MenuItem("3200x1800")) Engine::QueueResize(3200, 1800);
-            if (ImGui::MenuItem("3840x2160")) Engine::QueueResize(3840, 2160);
-
-            ImGui::EndMenu();
-        }
-
-        DirectX::XMFLOAT3 campos = m_camera.GetPositionFloat3();
-        std::string posText = fmt::format("Position: X={:.2f} Y={:.2f} Z={:.2f}", campos.x, campos.y, campos.z);
-
-        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - ImGui::CalcTextSize(posText.c_str()).x - 10.f);
-        ImGui::Text(posText.c_str());
-
-        ImGui::EndMainMenuBar();
-    }
-
-
-    if (showWindowControls)
-    {
-	    ImGui::Begin("Window Controls");
-	    {
-		    ImGui::Checkbox("V-Sync", &m_vsync);
-	    }
-	    ImGui::End();
-    }
-
-    if (showAmbientLight)
-    {
-        ImGui::Begin("Ambient Light");
-        {
-            ImGui::Text("Strength: ");
-            ImGui::SameLine();
-            ImGui::DragFloat("##ambientLightStrength", &m_psAmbientLightCBuffer.Data.ambientLightStrength, 0.01f, 0.f, 1.f, "%.2f");
-
-            ImGui::Text("Color:    ");
-            ImGui::SameLine();
-            ImGui::DragFloat3("##ambientLightColor", &m_psAmbientLightCBuffer.Data.ambientLightColor.x, 0.01f, 0.f, 1.f, "%.2f");
-        }
-        ImGui::End();
-    }
-
-    if (showPointLight)
-    {
-	    ImGui::Begin("Point Light");
-	    {
-		    ImGui::Text("Strength:    ");
-		    ImGui::SameLine();
-		    ImGui::DragFloat("##pointLightStrength", &m_psPointLightCBuffer.Data.pointLightStrength, 0.01f, 0.f, 100.f, "%.2f");
-
-		    ImGui::Text("Position:    ");
-		    ImGui::SameLine();
-		    ImGui::DragFloat3("##pointLightPosition", &m_psPointLightCBuffer.Data.pointLightPosition.x, 0.1f);
-
-		    ImGui::Text("Attenuation: ");
-		    ImGui::SameLine();
-		    ImGui::DragFloat("##pointLightAttenuation", &m_psPointLightCBuffer.Data.pointLightAttenuation, 0.01f, 0.f, 10.f, "%.2f");
-
-		    ImGui::Text("Max dist.:  ");
-		    ImGui::SameLine();
-		    ImGui::DragFloat("##pointLightMaxCalcDistance", &m_psPointLightCBuffer.Data.pointLightMaximumCalcDistance, 0.1f);
-	    }
-	    ImGui::End();
-    }
-
-    if (showOverlay)
-    {
-	    static int corner = 1;
-	    static bool hm = true;
-	    ImGuiIO& io = ImGui::GetIO();
-	    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-	    if (corner != -1)
-	    {
-		    const float PAD = 10.0f;
-		    const ImGuiViewport* viewport = ImGui::GetMainViewport();
-		    ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
-		    ImVec2 work_size = viewport->WorkSize;
-		    ImVec2 window_pos, window_pos_pivot;
-		    window_pos.x = (corner & 1) ? (work_pos.x + work_size.x - PAD) : (work_pos.x + PAD);
-		    window_pos.y = (corner & 2) ? (work_pos.y + work_size.y - PAD) : (work_pos.y + PAD);
-		    window_pos_pivot.x = (corner & 1) ? 1.0f : 0.0f;
-		    window_pos_pivot.y = (corner & 2) ? 1.0f : 0.0f;
-		    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-		    window_flags |= ImGuiWindowFlags_NoMove;
-	    }
-	    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-	    if (ImGui::Begin("##infoOverlay", &hm, window_flags))
-	    {
-		    ImGui::Text("Information");
-		    ImGui::Separator();
-		    if (ImGui::IsMousePosValid())
-			    ImGui::Text("Mouse Position: (%.1f,%.1f)", io.MousePos.x, io.MousePos.y);
-		    else
-			    ImGui::Text("Mouse Position: <invalid>");
-
-		    if (m_vsync)
-			    ImGui::Text("FPS: %d (VSync ON)", (int)ImGui::GetIO().Framerate);
-		    else
-			    ImGui::Text("FPS: %d (VSync OFF)", (int)ImGui::GetIO().Framerate);
-
-		    ImGui::Text("Frametime: %.3f ms", ImGui::GetIO().DeltaTime*1000.f);
-
-		    ImGui::Text("Resolution: %dx%d", m_width, m_height);
-        
-	    }
-	    ImGui::End();
-    }
-
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-#pragma endregion
+    Gui::Render();
 
     m_swapChain->Present(m_vsync, NULL);
 }
@@ -371,48 +132,7 @@ bool Graphics::InitializeDirectX()
         return false;
     }
 
-    ID3D11Texture2D* backBuffer;
-    m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
-    hr = m_device->CreateRenderTargetView(backBuffer, NULL, &m_renderTargetView);
-    if (FAILED(hr))
-    {
-        LOG_ERROR_HR("Failed to create render target view", hr);
-        return false;
-    }
-    backBuffer->Release();
-
-    CD3D11_VIEWPORT vp(0.f, 0.f, (float)m_width, (float)m_height);
-    m_deviceContext->RSSetViewports(1, &vp);
-
-    CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D24_UNORM_S8_UINT, m_width, m_height, 1, 1);
-    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    hr = m_device->CreateTexture2D(&depthStencilDesc, 0, &m_depthStencilBuffer);
-    if (FAILED(hr))
-    {
-        LOG_ERROR_HR("Failed to create depth stencil buffer", hr);
-        return false;
-    }
-
-    hr = m_device->CreateDepthStencilView(m_depthStencilBuffer, 0, &m_depthStencilView);
-    if (FAILED(hr))
-    {
-        LOG_ERROR_HR("Failed to create depth stencil view", hr);
-        return false;
-    }
-
-    D3D11_DEPTH_STENCIL_DESC depthStencilStateDesc{};
-    depthStencilStateDesc.DepthEnable = true;
-    depthStencilStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    depthStencilStateDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-    hr = m_device->CreateDepthStencilState(&depthStencilStateDesc, &m_depthStencilState);
-    if (FAILED(hr))
-    {
-        LOG_ERROR_HR("Failed to create depth stencil state", hr);
-        return false;
-    }
-
-    m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+    SetupD3D();
 
     D3D11_RASTERIZER_DESC rasterizerDesc{};
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
@@ -439,9 +159,95 @@ bool Graphics::InitializeDirectX()
         return false;
     }
 
+    gfx2d.Init(m_device, m_deviceContext);
+    gfx2d.SetViewport((float)m_width, (float)m_height, 0.f, 1.f);
+
     LOG_INFO("Graphics initialized.");
 
     return true;
+}
+
+void Graphics::SetupD3D()
+{
+    HRESULT hr;
+
+    hr = m_swapChain->ResizeBuffers(1, m_width, m_height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+    if (FAILED(hr))
+    {
+        LOG_ERROR_HR("Failed to resize buffers", hr);
+    }
+
+    ID3D11Texture2D* backBuffer;
+    m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
+    hr = m_device->CreateRenderTargetView(backBuffer, NULL, &m_renderTargetView);
+    if (FAILED(hr))
+    {
+        LOG_ERROR_HR("Failed to create render target view", hr);
+    }
+    backBuffer->Release();
+
+    CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D24_UNORM_S8_UINT, m_width, m_height, 1, 1);
+    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    hr = m_device->CreateTexture2D(&depthStencilDesc, 0, &m_depthStencilBuffer);
+    if (FAILED(hr))
+    {
+        LOG_ERROR_HR("Failed to create depth stencil buffer", hr);
+    }
+
+    hr = m_device->CreateDepthStencilView(m_depthStencilBuffer, 0, &m_depthStencilView);
+    if (FAILED(hr))
+    {
+        LOG_ERROR_HR("Failed to create depth stencil view", hr);
+    }
+
+    D3D11_DEPTH_STENCIL_DESC depthStencilStateDesc{};
+    depthStencilStateDesc.DepthEnable = true;
+    depthStencilStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    depthStencilStateDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+    hr = m_device->CreateDepthStencilState(&depthStencilStateDesc, &m_depthStencilState);
+    if (FAILED(hr))
+    {
+        LOG_ERROR_HR("Failed to create depth stencil state", hr);
+    }
+
+    m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+
+    CD3D11_VIEWPORT vp(0.f, 0.f, (float)m_width, (float)m_height);
+    m_deviceContext->RSSetViewports(1, &vp);
+}
+
+void Graphics::Resize(int width, int height)
+{
+    LOG_INFO("Window resized...");
+
+    m_width = width;
+    m_height = height;
+
+    LOG_INFO("Deleting scene...");
+    DeleteScene();
+
+    LOG_INFO("Shutting down ImGui...");
+    Gui::Shutdown();
+
+    m_deviceContext->OMSetRenderTargets(0, 0, 0);
+
+    m_depthStencilState->Release();
+    m_depthStencilView->Release();
+    m_depthStencilBuffer->Release();
+    m_renderTargetView->Release();
+    
+    m_deviceContext->Flush();
+
+    SetupD3D();
+
+    m_camera.SetProjectionValues(90.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 100000.0f);
+
+    LOG_INFO("Intializing ImGui...");
+    Gui::Setup(m_hwnd, m_device, m_deviceContext);
+
+
+    LOG_INFO("Resize complete.");
 }
 
 bool Graphics::SetupShaders()
@@ -479,29 +285,29 @@ bool Graphics::SetupScene()
         return false;
     }
 
-    if (!m_psAmbientLightCBuffer.Init(m_device, m_deviceContext))
-    {
-        LOG_ERROR("Failed to initialize light buffer");
-        return false;
-    }
+    m_ambientLight.Init(m_device, m_deviceContext);
 
-    m_psAmbientLightCBuffer.Data.ambientLightColor.x = 1.f;
-    m_psAmbientLightCBuffer.Data.ambientLightColor.y = 1.f;
-    m_psAmbientLightCBuffer.Data.ambientLightColor.z = 1.f;
-    m_psAmbientLightCBuffer.Data.ambientLightStrength = 1.f;
+    m_ambientLight.GetCBuffer()->Data.ambientLightColor.x = 1.f;
+    m_ambientLight.GetCBuffer()->Data.ambientLightColor.y = 1.f;
+    m_ambientLight.GetCBuffer()->Data.ambientLightColor.z = 1.f;
+    m_ambientLight.GetCBuffer()->Data.ambientLightStrength = 1.f;
 
-    if (!m_psPointLightCBuffer.Init(m_device, m_deviceContext))
-    {
-        LOG_ERROR("Failed to initialize point light buffer");
-        return false;
-    }
+    m_pointLight.Init(m_device, m_deviceContext);
 
-    m_psPointLightCBuffer.Data.pointLightColor = DirectX::XMFLOAT3(1.f, 1.f, 1.f);
-    m_psPointLightCBuffer.Data.pointLightPosition = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
-    m_psPointLightCBuffer.Data.pointLightStrength = 1.f;
-    m_psPointLightCBuffer.Data.pointLightAttenuation = 1.f;
-    m_psPointLightCBuffer.Data.pointLightMaximumCalcDistance = 1000.f;
+    m_pointLight.GetCBuffer()->Data.pointLightColor = DirectX::XMFLOAT3(1.f, 1.f, 1.f);
+    m_pointLight.GetCBuffer()->Data.pointLightPosition = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
+    m_pointLight.GetCBuffer()->Data.pointLightStrength = 1.f;
+    m_pointLight.GetCBuffer()->Data.pointLightAttenuation = 1.f;
+    m_pointLight.GetCBuffer()->Data.pointLightMaximumCalcDistance = 1000.f;
 
+    m_spotLight.Init(m_device, m_deviceContext);
+
+    m_spotLight.GetCBuffer()->Data.spotLightPosition = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
+    m_spotLight.GetCBuffer()->Data.spotLightDirection = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
+    m_spotLight.GetCBuffer()->Data.spotLightStrength = 10.f;
+    m_spotLight.GetCBuffer()->Data.spotLightDistance = 10000.f;
+
+    
     std::string textures[] = { "../bin/Textures/Palette.jpg" };
 
     if (!m_gameObject.Init("../bin/Lowpoly_City_Free_Pack.fbx", textures, 1, m_device, m_deviceContext))

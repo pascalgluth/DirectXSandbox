@@ -19,5 +19,6 @@ namespace Engine
     WindowSize GetNewWindowSize();
     void GFXResize();
     void SetResizeComplete();
+    Graphics* GetGFX();
 }
 

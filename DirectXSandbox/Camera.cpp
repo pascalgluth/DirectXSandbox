@@ -45,6 +45,13 @@ const XMFLOAT3& Camera::GetRotationFloat3() const
 	return this->rot;
 }
 
+const XMFLOAT3& Camera::GetForwardFloat3() const
+{
+	XMFLOAT3 vecForwardF3;
+	XMStoreFloat3(&vecForwardF3, vec_forward);
+	return vecForwardF3;
+}
+
 void Camera::SetPosition(const XMVECTOR& pos)
 {
 	XMStoreFloat3(&this->pos, pos);

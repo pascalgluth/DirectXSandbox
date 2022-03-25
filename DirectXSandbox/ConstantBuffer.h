@@ -13,20 +13,7 @@ struct ObjectCBuffer
     DirectX::XMMATRIX worldMatrix;
 };
 
-struct PSAmbientLightCBuffer
-{
-    DirectX::XMFLOAT3 ambientLightColor;
-    float ambientLightStrength;
-};
 
-struct PSpointLightCBuffer
-{
-    DirectX::XMFLOAT3 pointLightColor;
-    float pointLightStrength;
-    DirectX::XMFLOAT3 pointLightPosition;
-    float pointLightAttenuation;
-    float pointLightMaximumCalcDistance;
-};
 
 template<class T>
 class ConstantBuffer

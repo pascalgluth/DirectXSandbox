@@ -1,6 +1,7 @@
 ﻿#include "Engine.h"
 #include <Keyboard.h>
 #include <Mouse.h>
+#include "GameplayStatics.h"
 
 namespace Engine
 {
@@ -12,12 +13,13 @@ namespace Engine
 
     std::unique_ptr<DirectX::Keyboard> keyboard;
     std::unique_ptr<DirectX::Mouse> mouse;
+
+    GameplayStatics::Sound* mySound;
     
     void Initialize(HWND _hWnd, int width, int height)
     {
         resizeQueued = false;
         hWnd = _hWnd;
-
 
         keyboard = std::make_unique<DirectX::Keyboard>();
         mouse = std::make_unique<DirectX::Mouse>();
@@ -25,6 +27,12 @@ namespace Engine
 
         gfx = new Graphics();
         gfx->Initialize(hWnd, width, height);
+
+        GameplayStatics::Init();
+
+        mySound = new GameplayStatics::Sound("../bin/dog_sound.wav");
+        //GameplayStatics::PlaySound2D(mySound);
+        //GameplayStatics::PlaySound3D(mySound, gfx->GetCamPos());
     }
 
     void QueueResize(int width, int height)
@@ -70,5 +78,10 @@ namespace Engine
     void SetResizeComplete()
     {
         resizeQueued = false;
+    }
+
+    Graphics* GetGFX()
+    {
+        return gfx;
     }
 }

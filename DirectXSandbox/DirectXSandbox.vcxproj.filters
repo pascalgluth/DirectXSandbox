@@ -69,6 +69,18 @@
     <ClInclude Include="Mesh.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="GameplayStatics.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics2D.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectXSandbox.cpp">
@@ -119,9 +131,24 @@
     <ClCompile Include="Mesh.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="GameplayStatics.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics2D.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Gui.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\pixelshader.hlsl" />
     <FxCompile Include="shaders\vertexshader.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\LightEffects.fx" />
   </ItemGroup>
 </Project>
