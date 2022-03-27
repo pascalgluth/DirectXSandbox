@@ -1,7 +1,7 @@
 ﻿#include "Logger.h"
 #include <Windows.h>
 
-namespace Logger
+namespace FLogger
 {
 	void LogInfo(const std::string& str)
 	{

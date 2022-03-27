@@ -16,6 +16,9 @@ public:
 	void Render();
 	const DirectX::XMMATRIX& GetTransform() { return m_transform; }
 
+	std::vector<Vertex> Vertices;
+	std::vector<DWORD> Indices;
+
 private:
 	ID3D11Device* m_device;
 	ID3D11DeviceContext* m_deviceContext;
@@ -24,6 +27,8 @@ private:
 
 	int m_indexCount = 0;
 	int m_vertexCount = 0;
+
+	
 
 	DirectX::XMMATRIX m_transform;
 

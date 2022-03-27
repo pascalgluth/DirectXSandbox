@@ -5,17 +5,15 @@
 #include "Graphics.h"
 #include "Logger.h"
 
+bool VisibleGameObject::AreObjectsLoading = false;
+
 bool VisibleGameObject::Init(const std::string& model, const std::string textures[], UINT textureCount, ID3D11Device* device,
                              ID3D11DeviceContext* deviceContext)
 {
 	m_device = device;
 	m_deviceContext = deviceContext;
-	
-	if (!LoadModel(model))
-	{
-		LOG_ERROR("Failed to load model: " + model);
-		return false;
-	}
+
+	LoadModel(model);
 
 	for (int i = 0; i < textureCount; ++i)
 	{
@@ -31,6 +29,49 @@ bool VisibleGameObject::Init(const std::string& model, const std::string texture
 	return true;
 }
 
+bool VisibleGameObject::InitAsync(const std::string& model, const std::string textures[], UINT textureCount,
+	ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+{
+	m_device = device;
+	m_deviceContext = deviceContext;
+
+	AreObjectsLoading = true;
+	
+	m_loadModelTask = std::async(std::launch::async, [&]()
+	{
+		LoadModel(model);
+	});
+
+	for (int i = 0; i < textureCount; ++i)
+	{
+		LoadTexture(textures[i]);
+	}
+
+	if (!m_objectCBuffer.Init(device, deviceContext))
+	{
+		LOG_ERROR("Failed to create constant buffer for object");
+		return false;
+	}
+
+	return true;
+}
+
+bool VisibleGameObject::Init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+{
+	m_device = device;
+	m_deviceContext = deviceContext;
+	
+	if (!m_objectCBuffer.Init(device, deviceContext))
+	{
+		LOG_ERROR("Failed to create constant buffer for object");
+		return false;
+	}
+
+	m_loaded = true;
+
+	return true;
+}
+
 VisibleGameObject::~VisibleGameObject()
 {
 	for (int i = 0; i < m_textures.size(); ++i)
@@ -41,6 +82,8 @@ VisibleGameObject::~VisibleGameObject()
 
 void VisibleGameObject::Render()
 {
+	if (!m_loaded) return;
+	
 	m_deviceContext->VSSetConstantBuffers(1, 1, m_objectCBuffer.GetBuffer());
 
 	for (int i = 0; i < m_textures.size(); ++i)
@@ -84,6 +127,9 @@ bool VisibleGameObject::LoadModel(const std::string& path)
 	aiNode* node = scene->mRootNode;
 
 	LoadNode(node, scene, DirectX::XMMatrixIdentity());
+
+	m_loaded = true;
+	AreObjectsLoading = false;
 
 	return true;
 }

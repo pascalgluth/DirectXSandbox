@@ -3,9 +3,10 @@
 #include <Mouse.h>
 
 #include "Keyboard.h"
-#include "Engine.h"
 #include "Logger.h"
 #include "Gui.h"
+#include "ObjectManager.h"
+#include "DirectoryHelperMacros.h"
 
 Graphics::~Graphics()
 {
@@ -23,7 +24,7 @@ Graphics::~Graphics()
 
 void Graphics::Initialize(HWND hWnd, int width, int height)
 {
-    OutputDebugStringW(L"Initializing graphics...\n");
+    LOG_INFO("Initializing graphics...");
 
     m_hwnd = hWnd;
     m_width = width;
@@ -53,7 +54,6 @@ void Graphics::UpdateScene(float dt)
         DirectX::Mouse::Get().SetMode(Mouse::MODE_ABSOLUTE);
     }
 
-
     float speed = 0.1f;
 
     if (kb.LeftControl) speed *= 10;
@@ -65,36 +65,57 @@ void Graphics::UpdateScene(float dt)
     if (kb.Space) m_camera.AdjustPosition(0.f, speed, 0.f);
     if (kb.LeftShift) m_camera.AdjustPosition(0.f, -speed, 0.f);
 
+    if (kb.C) m_rigidBodyObject.SetPosition(m_camera.GetPositionFloat3());
+
     if (mouse.positionMode == Mouse::MODE_RELATIVE)
 		m_camera.AdjustRotation((float)mouse.y * 0.005f, (float)mouse.x * 0.005f, 0.f);
+
+    m_skyBox.SetPosition(m_camera.GetPositionFloat3());
+
+    m_physicsWorld->update(ImGui::GetIO().DeltaTime);
+    m_rigidBodyObject.Update(dt);
+
+    if (m_physicsWorld->testOverlap(m_worldCollider->getBody(), m_rigidBodyObject.GetCollider()->getBody()))
+    {
+        LOG_INFO("Hello we collide");
+    }
 }
 
-void Graphics::RenderFrame()
+void Graphics::RenderFrame(ObjectManager* pObjectManager)
 {
-    float clearColor[] = { 0.53f, 0.81f, 0.92f, 1.f };
+    float clearColor[] = { 0.f, 0.f, 0.f, 0.f };
     m_deviceContext->ClearRenderTargetView(m_renderTargetView, clearColor);
     m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+    m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 0);
+    m_deviceContext->PSSetSamplers(0, 1, &m_samplerState);
+
+    DirectX::XMMATRIX viewProjection = m_camera.GetViewMatrix() * m_camera.GetProjectionMatrix();
+    m_globalCBuffer.Data.vpMatrix = viewProjection;
+    m_globalCBuffer.Data.eyePos = m_camera.GetPositionFloat3();
+    if (!m_globalCBuffer.ApplyChanges()) return;
+    m_deviceContext->VSSetConstantBuffers(0, 1, m_globalCBuffer.GetBuffer());
+
+    m_skyBox.Render();
 
     m_deviceContext->IASetInputLayout(m_sceneVertexShader.GetInputLayout());
     m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     m_deviceContext->RSSetState(m_rasterizerState);
 
-    m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 0);
-    m_deviceContext->PSSetSamplers(0, 1, &m_samplerState);
     m_deviceContext->VSSetShader(m_sceneVertexShader.GetShader(), NULL, 0);
     m_deviceContext->PSSetShader(m_scenePixelShader.GetShader(), NULL, 0);
-
-    DirectX::XMMATRIX viewProjection = m_camera.GetViewMatrix() * m_camera.GetProjectionMatrix();
-    m_globalCBuffer.Data.vpMatrix = viewProjection;
-    if (!m_globalCBuffer.ApplyChanges()) return;
-    m_deviceContext->VSSetConstantBuffers(0, 1, m_globalCBuffer.GetBuffer());
 
     m_ambientLight.ApplyBuffer(0);
     m_pointLight.ApplyBuffer(1);
     m_spotLight.ApplyBuffer(2);
 
-    m_gameObject.Render();
+    pObjectManager->Render();
+
+    m_rigidBodyObject.Render();
+
+    m_ambientLight.Render();
+    m_spotLight.Render();
+    m_pointLight.Render();
 
     Gui::Render();
 
@@ -114,7 +135,7 @@ bool Graphics::InitializeDirectX()
     scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     scd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
     scd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-    scd.SampleDesc.Count = 1;
+    scd.SampleDesc.Count = 4;
     scd.SampleDesc.Quality = 0;
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     scd.BufferCount = 1;
@@ -188,6 +209,7 @@ void Graphics::SetupD3D()
 
     CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D24_UNORM_S8_UINT, m_width, m_height, 1, 1);
     depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depthStencilDesc.SampleDesc.Count = 4;
     hr = m_device->CreateTexture2D(&depthStencilDesc, 0, &m_depthStencilBuffer);
     if (FAILED(hr))
     {
@@ -241,7 +263,7 @@ void Graphics::Resize(int width, int height)
 
     SetupD3D();
 
-    m_camera.SetProjectionValues(90.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 100000.0f);
+    m_camera.SetProjectionValues(90.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 1000000.f);
 
     LOG_INFO("Intializing ImGui...");
     Gui::Setup(m_hwnd, m_device, m_deviceContext);
@@ -276,6 +298,8 @@ bool Graphics::SetupScene()
 {
     HRESULT hr;
 
+    m_physicsWorld = m_physicsCommon.createPhysicsWorld();
+    
     m_camera.SetPosition(0.f, 100.f, -2.f);
     m_camera.SetProjectionValues(90.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 100000.0f);
 
@@ -287,34 +311,82 @@ bool Graphics::SetupScene()
 
     m_ambientLight.Init(m_device, m_deviceContext);
 
-    m_ambientLight.GetCBuffer()->Data.ambientLightColor.x = 1.f;
-    m_ambientLight.GetCBuffer()->Data.ambientLightColor.y = 1.f;
-    m_ambientLight.GetCBuffer()->Data.ambientLightColor.z = 1.f;
-    m_ambientLight.GetCBuffer()->Data.ambientLightStrength = 1.f;
+    m_ambientLight.GetCBuffer()->Data.color.x = 1.f;
+    m_ambientLight.GetCBuffer()->Data.color.y = 1.f;
+    m_ambientLight.GetCBuffer()->Data.color.z = 1.f;
+    m_ambientLight.GetCBuffer()->Data.strength = 1.f;
 
     m_pointLight.Init(m_device, m_deviceContext);
 
-    m_pointLight.GetCBuffer()->Data.pointLightColor = DirectX::XMFLOAT3(1.f, 1.f, 1.f);
-    m_pointLight.GetCBuffer()->Data.pointLightPosition = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
-    m_pointLight.GetCBuffer()->Data.pointLightStrength = 1.f;
+    m_pointLight.GetCBuffer()->Data.color = DirectX::XMFLOAT3(1.f, 1.f, 1.f);
+    m_pointLight.GetCBuffer()->Data.position = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
+    m_pointLight.GetCBuffer()->Data.strength = 1.f;
     m_pointLight.GetCBuffer()->Data.pointLightAttenuation = 1.f;
     m_pointLight.GetCBuffer()->Data.pointLightMaximumCalcDistance = 1000.f;
 
     m_spotLight.Init(m_device, m_deviceContext);
 
-    m_spotLight.GetCBuffer()->Data.spotLightPosition = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
-    m_spotLight.GetCBuffer()->Data.spotLightDirection = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
-    m_spotLight.GetCBuffer()->Data.spotLightStrength = 10.f;
+    m_spotLight.GetCBuffer()->Data.position = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
+    m_spotLight.GetCBuffer()->Data.direction = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
+    m_spotLight.GetCBuffer()->Data.strength = 10.f;
     m_spotLight.GetCBuffer()->Data.spotLightDistance = 10000.f;
-
     
-    std::string textures[] = { "../bin/Textures/Palette.jpg" };
+    /*std::vector<float> vertices;
+    std::vector<int> indices;
 
-    if (!m_gameObject.Init("../bin/Lowpoly_City_Free_Pack.fbx", textures, 1, m_device, m_deviceContext))
+    std::vector<Mesh*>* meshes = m_gameObject.GetMeshes();
+    
+    for (int j = 0; j < meshes->size(); ++j)
     {
-        LOG_ERROR("Failed to initialize model");
+        for (int i = 0; i < (*meshes)[j]->Vertices.size(); ++i)
+        {
+            vertices.push_back((*meshes)[j]->Vertices[i].pos.x);
+            vertices.push_back((*meshes)[j]->Vertices[i].pos.y);
+            vertices.push_back((*meshes)[j]->Vertices[i].pos.z);
+        }
+
+        for (int i = 0; i < (*meshes)[j]->Indices.size(); ++i)
+        {
+            indices.push_back((*meshes)[j]->Indices[i]);
+        }
+    }
+
+    const int nbVertices = vertices.size(); 
+    const int nbTriangles = indices.size()/3;
+    
+    TriangleVertexArray* triangleArray = new TriangleVertexArray(nbVertices, vertices.data(), 3 * sizeof(float), nbTriangles, indices.data(), 3 * sizeof(int),
+        TriangleVertexArray::VertexDataType::VERTEX_FLOAT_TYPE, TriangleVertexArray::IndexDataType::INDEX_INTEGER_TYPE);
+
+    m_worldTriangleMesh = m_physicsCommon.createTriangleMesh();
+    m_worldTriangleMesh->addSubpart(triangleArray);
+
+    m_concaveMeshShape = m_physicsCommon.createConcaveMeshShape(m_worldTriangleMesh);*/
+
+    Vector3 position(0.f, 0.f, 0.f);
+    Quaternion orientation = Quaternion::identity();
+    Transform transform(position, orientation);
+
+    m_worldRigidBody = m_physicsWorld->createRigidBody(transform);
+    m_worldRigidBody->enableGravity(false);
+
+    m_boxCollider = m_physicsCommon.createBoxShape({1000.f, 5.f, 1000.f});
+    m_worldCollider = m_worldRigidBody->addCollider(m_boxCollider, transform);
+    m_worldRigidBody->setType(BodyType::KINEMATIC);
+    m_worldCollider->setIsTrigger(false);
+    
+
+    if (!m_skyBox.Init(m_device, m_deviceContext))
+    {
+        LOG_ERROR("Failed to init skybox");
         return false;
     }
+
+    // -100 -15 500
+
+    std::string textures2[] = { FILE_TEXTURE("bottle.png") };
+    m_rigidBodyObject.Init(FILE_MODEL("bottle.obj"), textures2, 1, m_device, m_deviceContext);
+    m_rigidBodyObject.SetPosition(XMFLOAT3(-100.f, -15.f, 500.f));
+    m_rigidBodyObject.SetupPhysics(&m_physicsCommon, m_physicsWorld);
 
     return true;
 }

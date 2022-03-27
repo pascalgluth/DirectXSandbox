@@ -11,8 +11,12 @@
 #include "ConstantBuffer.h"
 #include "Graphics2D.h"
 #include "Light.h"
+#include "RigidBodyObject.h"
 #include "Shaders.h"
+#include "SkyBox.h"
 #include "VisibleGameObject.h"
+
+namespace r3d = reactphysics3d;
 
 struct Vertex
 {
@@ -28,7 +32,7 @@ public:
     void Initialize(HWND hWnd, int width, int height);
     void Resize(int width, int height);
     void UpdateScene(float dt);
-    void RenderFrame();
+    void RenderFrame(class ObjectManager* pObjectManager);
 
     const XMFLOAT3& GetCamPos() { return m_camera.GetPositionFloat3(); }
     const XMFLOAT3& GetCamDirection() { return m_camera.GetForwardFloat3(); }
@@ -39,6 +43,9 @@ public:
     Light<LightCBuffer::PSAmbientLight>* GetAmbientLight() { return &m_ambientLight; }
     Light<LightCBuffer::PSPointLight>* GetPointLight() { return &m_pointLight; }
     Light<LightCBuffer::PSSpotLight>* GetSpotLight() { return &m_spotLight; }
+
+    ID3D11Device* GetDevice() { return m_device; }
+    ID3D11DeviceContext* GetDeviceContext() { return m_deviceContext; }
     
 private:
     HWND m_hwnd;
@@ -68,7 +75,17 @@ private:
     Light<LightCBuffer::PSPointLight> m_pointLight;
     Light<LightCBuffer::PSSpotLight> m_spotLight;
     ID3D11SamplerState* m_samplerState;
-    VisibleGameObject m_gameObject;
+    SkyBox m_skyBox;
+    // Physics
+    r3d::PhysicsCommon m_physicsCommon;
+    r3d::PhysicsWorld* m_physicsWorld = nullptr;
+    RigidBodyObject m_rigidBodyObject;
+    // Scene collider
+    RigidBody* m_worldRigidBody = nullptr;
+    TriangleMesh* m_worldTriangleMesh = nullptr;
+    ConcaveMeshShape* m_concaveMeshShape = nullptr;
+    Collider* m_worldCollider = nullptr;
+    BoxShape* m_boxCollider = nullptr;
 
     DirectX::Mouse::ButtonStateTracker m_tracker;
     

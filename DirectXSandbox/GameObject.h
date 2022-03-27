@@ -10,15 +10,17 @@ public:
 	DirectX::XMFLOAT3 GetPositonF3();
 	const DirectX::XMVECTOR& GetRotation();
 	DirectX::XMFLOAT3 GetRotationF3();
+	DirectX::XMFLOAT3 GetUpVectorF3();
+	DirectX::XMFLOAT3 GetScaleF3() { return m_scale; }
 
-	void SetPosition(const DirectX::XMVECTOR& pos);
-	void SetPosition(const DirectX::XMFLOAT3& pos);
-	void AddOffset(float ox, float oy, float oz);
-	void AddOffset(const DirectX::XMFLOAT3& offset);
-	void SetRotation(const DirectX::XMVECTOR& rot);
-	void SetRotation(const DirectX::XMFLOAT3& rot);
-	void AddRotationOffset(float x, float y, float z);
-	void SetScale(float sx, float sy, float sz);
+	virtual void SetPosition(const DirectX::XMVECTOR& pos);
+	virtual void SetPosition(const DirectX::XMFLOAT3& pos);
+	virtual void AddOffset(float ox, float oy, float oz);
+	virtual void AddOffset(const DirectX::XMFLOAT3& offset);
+	virtual void SetRotation(const DirectX::XMVECTOR& rot);
+	virtual void SetRotation(const DirectX::XMFLOAT3& rot);
+	virtual void AddRotationOffset(float x, float y, float z);
+	virtual void SetScale(float sx, float sy, float sz);
 
 protected:
 	virtual void UpdateMatrix() = 0;
@@ -34,6 +36,7 @@ protected:
 	DirectX::XMVECTOR m_left;
 	DirectX::XMVECTOR m_right;
 	DirectX::XMVECTOR m_back;
+	DirectX::XMVECTOR m_up;
 
 	DirectX::XMVECTOR m_position = DirectX::XMVectorSet(0.f, 0.f, 0.f, 0.f);
 	DirectX::XMVECTOR m_rotation = DirectX::XMVectorSet(0.f, 0.f, 0.f, 0.f);

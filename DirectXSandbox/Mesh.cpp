@@ -9,6 +9,9 @@ Mesh::Mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::vector
 	m_device = device;
 	m_deviceContext = deviceContext;
 
+	this->Vertices = vertices;
+	this->Indices = indices;
+
 	m_transform = parentTransform;
 
 	m_vertexCount = vertices.size();

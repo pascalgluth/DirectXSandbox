@@ -20,5 +20,6 @@ namespace Engine
     void GFXResize();
     void SetResizeComplete();
     Graphics* GetGFX();
+    ObjectManager* GetObjectManager();
 }
 

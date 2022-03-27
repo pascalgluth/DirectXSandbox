@@ -24,6 +24,13 @@ DirectX::XMFLOAT3 GameObject::GetRotationF3()
 	return rot;
 }
 
+DirectX::XMFLOAT3 GameObject::GetUpVectorF3()
+{
+	DirectX::XMFLOAT3 up;
+	DirectX::XMStoreFloat3(&up, m_up);
+	return up;
+}
+
 void GameObject::SetPosition(const DirectX::XMVECTOR& pos)
 {
 	m_position = pos;
@@ -99,4 +106,5 @@ void GameObject::UpdateDirectionVectors()
 	m_back = DirectX::XMVector3TransformCoord(DEFAULT_BACK, rotation);
 	m_left = DirectX::XMVector3TransformCoord(DEFAULT_LEFT, rotation);
 	m_right = DirectX::XMVector3TransformCoord(DEFAULT_RIGHT, rotation);
+	m_up = DirectX::XMVector3TransformCoord(DEFAULT_UP, rotation);
 }

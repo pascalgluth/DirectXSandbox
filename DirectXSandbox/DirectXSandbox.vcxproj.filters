@@ -81,6 +81,12 @@
     <ClInclude Include="Light.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="SkyBox.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="RigidBodyObject.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectXSandbox.cpp">
@@ -143,12 +149,20 @@
     <ClCompile Include="Light.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="SkyBox.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="RigidBodyObject.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\pixelshader.hlsl" />
     <FxCompile Include="shaders\vertexshader.hlsl" />
+    <FxCompile Include="shaders\skyboxps.hlsl" />
+    <FxCompile Include="shaders\skyboxvs.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\LightEffects.fx" />
+    <None Include="shaders\LightEffects.hlsl" />
   </ItemGroup>
 </Project>

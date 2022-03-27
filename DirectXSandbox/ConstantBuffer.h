@@ -6,6 +6,8 @@
 struct GlobalCBuffer
 {
     DirectX::XMMATRIX vpMatrix;
+    DirectX::XMFLOAT3 eyePos;
+    float pad;
 };
 
 struct ObjectCBuffer
