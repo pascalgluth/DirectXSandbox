@@ -27,5 +27,6 @@ namespace Engine
     ObjectManager* GetObjectManager();
     void LoadScene(const std::string& file);
     void SaveScene(const std::string& file);
+    void NewScene();
 }
 

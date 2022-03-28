@@ -8,9 +8,13 @@ namespace Gui
     void Shutdown();
     void Render();
 
+    enum MsgType { MSG_INFO, MSG_WARNING, MSG_ERROR };
+    void AddLogLine(const std::string& line, MsgType msgType);
+
     void RenderSceneManager();
     void RenderObjectInspector();
     void RenderCreateObjectMenu();
     void RenderLoadFileDialog();
     void RenderSaveSceneMenu();
+    void RenderLogWindow();
 }

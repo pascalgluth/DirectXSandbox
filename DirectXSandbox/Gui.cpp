@@ -15,8 +15,22 @@ std::string selectedObject = "";
 GameObject* selectedObjectPtr = nullptr;
 bool createObjectMenu = false;
 bool saveSceneMenu = false;
+bool showLogWindow = true;
+bool logScrollToBottom = false;
 ImGui::FileBrowser fileDialog;
 std::string scenePath = "";
+
+struct LogMessage
+{
+	Gui::MsgType type;
+	std::string msg;
+	
+	LogMessage(Gui::MsgType _type, const std::string& str)
+		: type(_type), msg(str)
+	{}
+};
+
+std::vector<LogMessage> logMessages;
 
 void Gui::Setup(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
@@ -79,14 +93,16 @@ void Gui::Render()
     {
     	if (ImGui::BeginMenu("Scene"))
     	{
-    		if (ImGui::MenuItem("Save"))
+    		if (ImGui::MenuItem("New"))
     		{
-    			saveSceneMenu = true;
+    			selectedObject = "";
+    			selectedObjectPtr = nullptr;
+    			scenePath = "";
+    			Engine::NewScene();
     		}
-    		if (ImGui::MenuItem("Load"))
-    		{
-    			fileDialog.Open();
-    		}
+    		if (ImGui::MenuItem("Save")) saveSceneMenu = true;
+    		if (ImGui::MenuItem("Load")) fileDialog.Open();
+    		
     		ImGui::EndMenu();
     	}
     	
@@ -99,6 +115,7 @@ void Gui::Render()
             ImGui::Checkbox("Overlay", &showOverlay);
 	    	ImGui::Checkbox("Scene Manager", &showSceneManager);
 	    	ImGui::Checkbox("Object Inspector", &showObjectInspector);
+	    	ImGui::Checkbox("Log", &showLogWindow);
 
             ImGui::EndMenu();
 	    }
@@ -175,6 +192,9 @@ void Gui::Render()
 
 	if (saveSceneMenu)
 		RenderSaveSceneMenu();
+
+	if (showLogWindow)
+		RenderLogWindow();
 	
     if (showOverlay)
     {
@@ -221,6 +241,12 @@ void Gui::Render()
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Gui::AddLogLine(const std::string& line, MsgType msgType)
+{
+	logMessages.emplace_back(msgType, line);
+	logScrollToBottom = true;
 }
 
 void Gui::RenderSceneManager()
@@ -276,19 +302,19 @@ void Gui::RenderObjectInspector()
 				return;
 			}
 
-			static DirectX::XMFLOAT3 position = selectedObjectPtr->GetPositonF3();
+			DirectX::XMFLOAT3 position = selectedObjectPtr->GetPositonF3();
 			ImGui::Text("Position: ");
 			ImGui::SameLine();
 			ImGui::DragFloat3("##positionf3", &position.x, 0.1f);
 			selectedObjectPtr->SetPosition(position);
 
-			static DirectX::XMFLOAT3 rotation = selectedObjectPtr->GetRotationF3();
+			DirectX::XMFLOAT3 rotation = selectedObjectPtr->GetRotationF3();
 			ImGui::Text("Rotation: ");
 			ImGui::SameLine();
 			ImGui::DragFloat3("##rotationf3", &rotation.x, 0.1f);
 			selectedObjectPtr->SetRotation(rotation);
 
-			static DirectX::XMFLOAT3 scale = selectedObjectPtr->GetScaleF3();
+			DirectX::XMFLOAT3 scale = selectedObjectPtr->GetScaleF3();
 			ImGui::Text("Scale: ");
 			ImGui::SameLine();
 			ImGui::DragFloat3("##scalef3", &scale.x, 0.1f);
@@ -333,7 +359,10 @@ void Gui::RenderLoadFileDialog()
 
 	if (fileDialog.HasSelected())
 	{
-		Engine::LoadScene(fileDialog.GetSelected().string());
+		scenePath = fileDialog.GetSelected().string();
+		selectedObject = "";
+		selectedObjectPtr = nullptr;
+		Engine::LoadScene(scenePath);
 		fileDialog.ClearSelected();
 	}
 }
@@ -342,16 +371,48 @@ void Gui::RenderSaveSceneMenu()
 {
 	ImGui::Begin("Save", &saveSceneMenu);
 	{
-		static char buffer[50];
-		
-		ImGui::Text("Scene Name: ");
-		ImGui::SameLine();
-		ImGui::InputText("##saveSceneFileName", buffer, sizeof(buffer));
-
-		if (ImGui::Button("Save"))
+		if (scenePath != "")
 		{
-			Engine::SaveScene(FILE_OTHER(std::string(buffer) + ".json"));
+			Engine::SaveScene(scenePath);
 			saveSceneMenu = false;
+		}
+		else
+		{
+			static char buffer[50];
+		
+			ImGui::Text("Scene Name: ");
+			ImGui::SameLine();
+			ImGui::InputText("##saveSceneFileName", buffer, sizeof(buffer));
+
+			if (ImGui::Button("Save"))
+			{
+				Engine::SaveScene(FILE_OTHER(std::string(buffer) + ".json"));
+				scenePath = FILE_OTHER(std::string(buffer) + ".json");
+				saveSceneMenu = false;
+			}
+		}
+	}
+	ImGui::End();
+}
+
+void Gui::RenderLogWindow()
+{
+	ImGui::Begin("Log", &showLogWindow);
+	{
+		for (int i = 0; i < logMessages.size(); ++i)
+		{
+			if (logMessages[i].type == MSG_WARNING)
+				ImGui::TextColored({1.f, 0.6f, 0.f, 1.f}, logMessages[i].msg.c_str());
+			else if (logMessages[i].type == MSG_ERROR)
+				ImGui::TextColored({1.f, 0.f, 0.f, 1.f}, logMessages[i].msg.c_str());
+			else
+				ImGui::Text(logMessages[i].msg.c_str());
+		}
+
+		if (logScrollToBottom)
+		{
+			ImGui::SetScrollHereY(1.f);
+			logScrollToBottom = false;
 		}
 	}
 	ImGui::End();

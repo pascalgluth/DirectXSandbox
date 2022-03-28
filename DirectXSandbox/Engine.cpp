@@ -35,7 +35,7 @@ namespace Engine
         gfx = new Graphics();
         gfx->Initialize(hWnd, width, height);
 
-        objManager = new ObjectManager(gfx->GetDevice(), gfx->GetDeviceContext());
+        NewScene();
 
         GameplayStatics::Init();
 
@@ -173,5 +173,13 @@ namespace Engine
         ofs.close();
 
         LOG_INFO("Saved Scene.");
+    }
+
+    void NewScene()
+    {
+        if (objManager) delete objManager;
+        objManager = new ObjectManager(gfx->GetDevice(), gfx->GetDeviceContext());
+
+        LOG_INFO("Created new scene. Don't forget to save it!");
     }
 }
