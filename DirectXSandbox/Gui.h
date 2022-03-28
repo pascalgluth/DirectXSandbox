@@ -11,4 +11,6 @@ namespace Gui
     void RenderSceneManager();
     void RenderObjectInspector();
     void RenderCreateObjectMenu();
+    void RenderLoadFileDialog();
+    void RenderSaveSceneMenu();
 }

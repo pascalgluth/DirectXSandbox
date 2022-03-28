@@ -20,13 +20,14 @@ public:
     std::map<std::string, GameObject*>* GetAllObjects() { return &m_objects; }
 
     template<class T>
-    bool CreateObject(const std::string& name)
+    GameObject* CreateObject(const std::string& name)
     {
         static_assert(std::is_base_of<GameObject, T>::value, "Object type needs to be a GameObject");
 
-        m_objects.emplace(std::pair<std::string, GameObject*>(name, new T()));
+        GameObject* newObj = new T();
+        m_objects.emplace(std::pair<std::string, GameObject*>(name, newObj));
 
-        return true;
+        return newObj;
     }
 
     template<class T>
@@ -75,3 +76,4 @@ private:
     std::map<std::string, GameObject*> m_objects;
     
 };
+

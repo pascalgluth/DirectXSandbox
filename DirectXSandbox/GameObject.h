@@ -5,7 +5,7 @@
 class GameObject
 {
 public:
-	virtual ~GameObject() = default;
+	virtual ~GameObject(){};
 	const DirectX::XMVECTOR& GetPosition();
 	DirectX::XMFLOAT3 GetPositonF3();
 	const DirectX::XMVECTOR& GetRotation();
@@ -23,7 +23,7 @@ public:
 	virtual void SetScale(float sx, float sy, float sz);
 
 protected:
-	virtual void UpdateMatrix() = 0;
+	virtual void UpdateMatrix() {};
 	void UpdateDirectionVectors();
 
 	const DirectX::XMVECTOR DEFAULT_FORWARD = DirectX::XMVectorSet(0.f, 0.f, 1.f, 0.f);

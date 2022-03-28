@@ -26,6 +26,9 @@ bool VisibleGameObject::Init(const std::string& model, const std::string texture
 		return false;
 	}
 
+	m_modelFile = model;
+	m_textureFile = textures[0];
+
 	return true;
 }
 
@@ -52,6 +55,9 @@ bool VisibleGameObject::InitAsync(const std::string& model, const std::string te
 		LOG_ERROR("Failed to create constant buffer for object");
 		return false;
 	}
+
+	m_modelFile = model;
+	m_textureFile = textures[0];
 
 	return true;
 }

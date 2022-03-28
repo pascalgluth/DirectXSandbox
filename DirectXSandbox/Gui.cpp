@@ -3,15 +3,20 @@
 
 #include "DirectoryHelperMacros.h"
 #include "Engine.h"
+#include "Logger.h"
 #include "ObjectManager.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imfilebrowser.h"
 
 Graphics* gfx;
 std::string selectedObject = "";
 GameObject* selectedObjectPtr = nullptr;
 bool createObjectMenu = false;
+bool saveSceneMenu = false;
+ImGui::FileBrowser fileDialog;
+std::string scenePath = "";
 
 void Gui::Setup(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
@@ -39,6 +44,9 @@ void Gui::Setup(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceCont
 	style->GrabRounding = 3.0f;
 
 	gfx = Engine::GetGFX();
+
+	fileDialog.SetTitle("Load");
+	fileDialog.SetTypeFilters({".json"});
 }
 
 void Gui::Shutdown()
@@ -69,6 +77,19 @@ void Gui::Render()
 
     ImGui::BeginMainMenuBar();
     {
+    	if (ImGui::BeginMenu("Scene"))
+    	{
+    		if (ImGui::MenuItem("Save"))
+    		{
+    			saveSceneMenu = true;
+    		}
+    		if (ImGui::MenuItem("Load"))
+    		{
+    			fileDialog.Open();
+    		}
+    		ImGui::EndMenu();
+    	}
+    	
 	    if (ImGui::BeginMenu("Window"))
 	    {
             ImGui::Checkbox("Window Controls", &showWindowControls);
@@ -149,6 +170,11 @@ void Gui::Render()
 
 	if (createObjectMenu)
 		RenderCreateObjectMenu();
+	
+	RenderLoadFileDialog();
+
+	if (saveSceneMenu)
+		RenderSaveSceneMenu();
 	
     if (showOverlay)
     {
@@ -296,6 +322,36 @@ void Gui::RenderCreateObjectMenu()
 		{
 			Engine::GetObjectManager()->CreateVisibleObject<VisibleGameObject>(name, FILE_MODEL(model), FILE_TEXTURE(texture));
 			createObjectMenu = false;
+		}
+	}
+	ImGui::End();
+}
+
+void Gui::RenderLoadFileDialog()
+{
+	fileDialog.Display();
+
+	if (fileDialog.HasSelected())
+	{
+		Engine::LoadScene(fileDialog.GetSelected().string());
+		fileDialog.ClearSelected();
+	}
+}
+
+void Gui::RenderSaveSceneMenu()
+{
+	ImGui::Begin("Save", &saveSceneMenu);
+	{
+		static char buffer[50];
+		
+		ImGui::Text("Scene Name: ");
+		ImGui::SameLine();
+		ImGui::InputText("##saveSceneFileName", buffer, sizeof(buffer));
+
+		if (ImGui::Button("Save"))
+		{
+			Engine::SaveScene(FILE_OTHER(std::string(buffer) + ".json"));
+			saveSceneMenu = false;
 		}
 	}
 	ImGui::End();

@@ -21,5 +21,7 @@ namespace Engine
     void SetResizeComplete();
     Graphics* GetGFX();
     ObjectManager* GetObjectManager();
+    void LoadScene(const std::string& file);
+    void SaveScene(const std::string& file);
 }
 

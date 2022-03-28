@@ -164,6 +164,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ObjectManager.h" />
     <ClInclude Include="RigidBodyObject.h" />
+    <ClInclude Include="SerializedTypes.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SkyBox.h" />
     <ClInclude Include="VisibleGameObject.h" />

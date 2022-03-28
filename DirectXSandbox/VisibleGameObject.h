@@ -37,6 +37,8 @@ public:
 	std::vector<Mesh*>* GetMeshes() { return &m_meshes; }
 
 	bool IsLoading() const { return m_loaded; }
+	const std::string& GetModelFile() const { return m_modelFile; }
+	const std::string& GetTextureFile() const { return m_textureFile; }
 
 protected:
 	void UpdateMatrix() override;
@@ -44,6 +46,9 @@ protected:
 	bool m_loaded = false;
 	std::future<void> m_loadModelTask;
 	std::future<void> m_loadTextureTask;
+
+	std::string m_modelFile;
+	std::string m_textureFile;
 
 	ID3D11Device* m_device = nullptr;
 	ID3D11DeviceContext* m_deviceContext = nullptr;
