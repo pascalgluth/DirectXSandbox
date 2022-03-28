@@ -8,6 +8,10 @@ namespace Engine
     {
         int width;
         int height;
+
+        WindowSize()
+            : width(0), height(0)
+        {}
     };
 
     void Initialize(HWND _hWnd, int width, int height);

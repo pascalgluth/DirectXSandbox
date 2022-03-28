@@ -15,7 +15,7 @@ bool VisibleGameObject::Init(const std::string& model, const std::string texture
 
 	LoadModel(model);
 
-	for (int i = 0; i < textureCount; ++i)
+	for (UINT i = 0; i < textureCount; ++i)
 	{
 		LoadTexture(textures[i]);
 	}
@@ -45,7 +45,7 @@ bool VisibleGameObject::InitAsync(const std::string& model, const std::string te
 		LoadModel(model);
 	});
 
-	for (int i = 0; i < textureCount; ++i)
+	for (UINT i = 0; i < textureCount; ++i)
 	{
 		LoadTexture(textures[i]);
 	}
@@ -144,13 +144,13 @@ void VisibleGameObject::LoadNode(aiNode* node, const aiScene* scene, const Direc
 {
 	DirectX::XMMATRIX nodeTranform = DirectX::XMMatrixTranspose(DirectX::XMMATRIX(&node->mTransformation.a1)) * parentTransform;
 
-	for (int i = 0; i < node->mNumMeshes; ++i)
+	for (UINT i = 0; i < node->mNumMeshes; ++i)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		m_meshes.emplace_back(LoadMesh(mesh, scene, nodeTranform));
 	}
 
-	for (int i = 0; i < node->mNumChildren; ++i)
+	for (UINT i = 0; i < node->mNumChildren; ++i)
 	{
 		LoadNode(node->mChildren[i], scene, nodeTranform);
 	}
@@ -162,7 +162,7 @@ Mesh* VisibleGameObject::LoadMesh(aiMesh* mesh, const aiScene* scene, const Dire
 	std::vector<DWORD> indices;
 
 
-	for (int i = 0; i < mesh->mNumVertices; ++i)
+	for (UINT i = 0; i < mesh->mNumVertices; ++i)
 	{
 		Vertex v;
 
@@ -183,9 +183,9 @@ Mesh* VisibleGameObject::LoadMesh(aiMesh* mesh, const aiScene* scene, const Dire
 		vertices.push_back(v);
 	}
 
-	for (int i = 0; i < mesh->mNumFaces; ++i)
+	for (UINT i = 0; i < mesh->mNumFaces; ++i)
 	{
-		for (int j = 0; j < mesh->mFaces[i].mNumIndices; ++j)
+		for (UINT j = 0; j < mesh->mFaces[i].mNumIndices; ++j)
 		{
 			indices.push_back(mesh->mFaces[i].mIndices[j]);
 		}

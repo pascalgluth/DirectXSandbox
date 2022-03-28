@@ -82,13 +82,13 @@ void SkyBox::CreateSphere(int latlines, int longlines)
     vertices[0].pos.y = 0.0f;
     vertices[0].pos.z = 1.0f;
 
-    for(DWORD i = 0; i < latlines-2; ++i)
+    for(int i = 0; i < latlines-2; ++i)
     {
-        spherePitch = (i+1) * (3.14/(latlines-1));
+        spherePitch = ((float)i+1.f) * (3.14f/((float)latlines-1.f));
         rotationX = XMMatrixRotationX(spherePitch);
-        for(DWORD j = 0; j < longlines; ++j)
+        for(int j = 0; j < longlines; ++j)
         {
-            sphereYaw = j * (6.28/(longlines));
+            sphereYaw = (float)j * (6.28f/(float)longlines);
             rotationY = XMMatrixRotationZ(sphereYaw);
             currVertPos = XMVector3TransformNormal( XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), (rotationX * rotationY) );    
             currVertPos = XMVector3Normalize( currVertPos );
@@ -106,7 +106,7 @@ void SkyBox::CreateSphere(int latlines, int longlines)
     std::vector<DWORD> indices(numSphereFaces * 3);
 
     int k = 0;
-    for(DWORD l = 0; l < longlines-1; ++l)
+    for(int l = 0; l < longlines-1; ++l)
     {
         indices[k] = 0;
         indices[k+1] = l+1;
@@ -119,9 +119,9 @@ void SkyBox::CreateSphere(int latlines, int longlines)
     indices[k+2] = 1;
     k += 3;
 
-    for(DWORD i = 0; i < latlines-3; ++i)
+    for(int i = 0; i < latlines-3; ++i)
     {
-        for(DWORD j = 0; j < longlines-1; ++j)
+        for(int j = 0; j < longlines-1; ++j)
         {
             indices[k]   = i*longlines+j+1;
             indices[k+1] = i*longlines+j+2;
@@ -145,7 +145,7 @@ void SkyBox::CreateSphere(int latlines, int longlines)
         k += 6;
     }
 
-    for(DWORD l = 0; l < longlines-1; ++l)
+    for(int l = 0; l < longlines-1; ++l)
     {
         indices[k] = numSphereVertices-1;
         indices[k+1] = (numSphereVertices-1)-(l+1);

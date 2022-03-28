@@ -14,8 +14,8 @@ Mesh::Mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::vector
 
 	m_transform = parentTransform;
 
-	m_vertexCount = vertices.size();
-	m_indexCount = indices.size();
+	m_vertexCount = static_cast<int>(vertices.size());
+	m_indexCount = static_cast<int>(indices.size());
 
 	UINT size = sizeof(Vertex) * m_vertexCount;
 	CD3D11_BUFFER_DESC vertexBufferDesc(size, D3D11_BIND_VERTEX_BUFFER);

@@ -10,8 +10,6 @@
 #include "VisibleGameObject.h"
 #include "ImGui/imgui.h"
 
-#pragma pack(push, 4)
-
 namespace LightCBuffer
 {
     struct LightCBuffer
@@ -39,8 +37,6 @@ namespace LightCBuffer
         float spotLightAttenuation = 1.f;
     };
 }
-
-#pragma pack(pop);
 
 template <typename LightType>
 class Light : public VisibleGameObject
