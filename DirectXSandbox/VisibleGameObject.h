@@ -20,10 +20,9 @@ public:
 
 	static bool AreObjectsLoading;
 	
-	bool Init(const std::string& model, const std::string textures[], UINT textureCount, ID3D11Device* device,
+	bool Init(const std::string& model, ID3D11Device* device,
 		ID3D11DeviceContext* deviceContext);
-	bool InitAsync(const std::string& model, const std::string textures[], UINT textureCount, ID3D11Device* device,
-		ID3D11DeviceContext* deviceContext);
+	bool InitAsync(const std::string& model, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	virtual bool Init(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	~VisibleGameObject() override;
 

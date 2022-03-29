@@ -31,16 +31,14 @@ public:
     }
 
     template<class T>
-    VisibleGameObject* CreateVisibleObject(const std::string& name, const std::string& model, const std::string& texture)
+    VisibleGameObject* CreateVisibleObject(const std::string& name, const std::string& model)
     {
         static_assert(std::is_base_of<VisibleGameObject, T>::value, "Object type needs to be a VisibleGameObject");
 
         VisibleGameObject* newObject = new T();
         if (!newObject) return nullptr;
 
-        std::string textures[] = { texture };
-        
-        if (!newObject->InitAsync(model, textures, 1, m_device, m_deviceContext))
+        if (!newObject->Init(model, m_device, m_deviceContext))
             return nullptr;
 
         m_objects.emplace(std::pair(name, newObject));

@@ -2,15 +2,16 @@
 
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include <string>
 #include <vector>
+
+#include "Texture.h"
 
 struct Vertex;
 
 class Mesh
 {
 public:
-	Mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::vector<Vertex>& vertices, std::vector<DWORD>& indices, const DirectX::XMMATRIX& parentTransform);
+	Mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::vector<Vertex>& vertices, std::vector<DWORD>& indices, std::vector<Texture>& textures, const DirectX::XMMATRIX& parentTransform);
 	~Mesh();
 
 	void Render();
@@ -28,7 +29,7 @@ private:
 	int m_indexCount = 0;
 	int m_vertexCount = 0;
 
-	
+	std::vector<Texture> m_textures;
 
 	DirectX::XMMATRIX m_transform;
 

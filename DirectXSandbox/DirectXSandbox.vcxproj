@@ -122,6 +122,7 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
     </FxCompile>
     <ClCompile Include="SkyBox.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="VisibleGameObject.cpp" />
     <FxCompile Include="shaders\pixelshader.hlsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -167,6 +168,7 @@
     <ClInclude Include="SerializedTypes.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SkyBox.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="VisibleGameObject.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

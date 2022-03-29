@@ -4,13 +4,14 @@
 
 #include "Graphics.h"
 
-Mesh::Mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::vector<Vertex>& vertices, std::vector<DWORD>& indices, const DirectX::XMMATRIX& parentTransform)
+Mesh::Mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, std::vector<Vertex>& vertices, std::vector<DWORD>& indices, std::vector<Texture>& textures, const DirectX::XMMATRIX& parentTransform)
 {
 	m_device = device;
 	m_deviceContext = deviceContext;
 
 	this->Vertices = vertices;
 	this->Indices = indices;
+	m_textures = textures;
 
 	m_transform = parentTransform;
 
@@ -55,6 +56,11 @@ Mesh::~Mesh()
 
 void Mesh::Render()
 {
+	for (int i = 0; i < m_textures.size(); ++i)
+	{
+		m_deviceContext->PSSetShaderResources(m_textures[i].GetSlot(), 1, m_textures[i].GetTextureResourceViewAddress());
+	}
+	
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	m_deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);

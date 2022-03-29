@@ -35,6 +35,6 @@ VS_OUTPUT main(VS_INPUT input)
     output.textureCoord = input.textureCoord;
     output.worldPosition = mul(float4(input.position, 1.f), worldMatrix);
     output.normal = normalize(mul(float4(input.normal, 0.f), worldMatrix));
-    output.eyePos = eyePos;
+    output.eyePos = float4(eyePos, 1.f);
     return output;
 }

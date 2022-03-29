@@ -2,18 +2,14 @@
 
 cbuffer ambientLightBuffer : register(b0)
 {
-    LightFX::AmbientLight cAmbientLight;
+    LightFX::AmbientLight ambientLight;
 }
 
 cbuffer pointLightBuffer : register(b1)
 {
-    LightFX::PointLight cPointLight;
+    LightFX::PointLight pointLight;
 }
 
-cbuffer spotLightBuffer : register(b2)
-{
-    LightFX::SpotLight cSpotLight;
-}
 
 struct PS_INPUT
 {
@@ -24,25 +20,30 @@ struct PS_INPUT
     float3 eyePos : EYEPOS;
 };
 
-Texture2D objectTexture : TEXTURE : register(t0);
+Texture2D diffTex : DIFF_TEXTURE : register(t0);
+Texture2D specTex : SPEC_TEXTURE : register(t1);
+
 SamplerState objectSampler : SAMPLER : register(s0);
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
-    float3 sampledColor = objectTexture.Sample(objectSampler, input.textureCoord);
+    float4 diffuseColor = diffTex.Sample(objectSampler, input.textureCoord);
+    float4 specColor = specTex.Sample(objectSampler, input.textureCoord);
 
     // Ambient Light
-	float3 allLight = cAmbientLight.ambientLightcolor * cAmbientLight.ambientLightstrength;
+	//float3 allLight = cAmbientLight.ambientLightcolor * cAmbientLight.ambientLightstrength;
 
-    float3 pointLight;
-    if (LightFX::computePointLight(input.worldPosition, input.normal, cPointLight,
-        pointLight))
-    {
-        allLight += pointLight;
-    }
+    float4 diffuseLight = ambientLight.ambient;
     
+    float4 a, d, s;
 
-    float3 spotLightAmbient;
+    LightFX::computePointLight(input.worldPosition, input.normal, input.eyePos, pointLight,
+         diffuseColor, specColor, a, d, s);
+
+    diffuseLight += d;
+    float4 specularLight = s;
+
+    /*float3 spotLightAmbient;
     float3 spotLightDiffuse;
     float3 spotLightSpec;
     LightFX::computeSpotLight(input.worldPosition, input.normal, input.eyePos, cSpotLight,
@@ -50,10 +51,8 @@ float4 main(PS_INPUT input) : SV_TARGET
     
     allLight += spotLightAmbient;
     allLight += spotLightDiffuse;
-    allLight += spotLightSpec;
-    
+    allLight += spotLightSpec; */
+    float4 color = (diffuseColor * diffuseLight) + (specColor * specularLight);
 
-    float3 pixelColor = sampledColor * allLight;
-
-    return float4(pixelColor, 1.f);
+    return color;
 }

@@ -158,5 +158,5 @@ void SkyBox::CreateSphere(int latlines, int longlines)
     indices[k+2] = numSphereVertices-2;
 
 
-    m_meshes.emplace_back(new Mesh(m_device, m_deviceContext, vertices, indices, XMMatrixIdentity()));
+    //m_meshes.emplace_back(new Mesh(m_device, m_deviceContext, vertices, indices, XMMatrixIdentity()));
 }

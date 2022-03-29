@@ -147,7 +147,7 @@ namespace Engine
             GameObject* newObj;
             if (scene.objects[i].isVisibleObject)
                 newObj =
-                    objManager->CreateVisibleObject<VisibleGameObject>(scene.objects[i].name, scene.objects[i].model, scene.objects[i].texture);
+                    objManager->CreateVisibleObject<VisibleGameObject>(scene.objects[i].name, scene.objects[i].model);
             else
                 newObj = objManager->CreateObject<GameObject>(scene.objects[i].name);
 

@@ -7,18 +7,12 @@
 
 bool VisibleGameObject::AreObjectsLoading = false;
 
-bool VisibleGameObject::Init(const std::string& model, const std::string textures[], UINT textureCount, ID3D11Device* device,
-                             ID3D11DeviceContext* deviceContext)
+bool VisibleGameObject::Init(const std::string& model, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
 	m_device = device;
 	m_deviceContext = deviceContext;
 
 	LoadModel(model);
-
-	for (UINT i = 0; i < textureCount; ++i)
-	{
-		LoadTexture(textures[i]);
-	}
 
 	if (!m_objectCBuffer.Init(device, deviceContext))
 	{
@@ -27,13 +21,11 @@ bool VisibleGameObject::Init(const std::string& model, const std::string texture
 	}
 
 	m_modelFile = model;
-	m_textureFile = textures[0];
 
 	return true;
 }
 
-bool VisibleGameObject::InitAsync(const std::string& model, const std::string textures[], UINT textureCount,
-	ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+bool VisibleGameObject::InitAsync(const std::string& model, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
 	m_device = device;
 	m_deviceContext = deviceContext;
@@ -44,12 +36,7 @@ bool VisibleGameObject::InitAsync(const std::string& model, const std::string te
 	{
 		LoadModel(model);
 	});
-
-	for (UINT i = 0; i < textureCount; ++i)
-	{
-		LoadTexture(textures[i]);
-	}
-
+	
 	if (!m_objectCBuffer.Init(device, deviceContext))
 	{
 		LOG_ERROR("Failed to create constant buffer for object");
@@ -57,7 +44,6 @@ bool VisibleGameObject::InitAsync(const std::string& model, const std::string te
 	}
 
 	m_modelFile = model;
-	m_textureFile = textures[0];
 
 	return true;
 }
@@ -92,11 +78,6 @@ void VisibleGameObject::Render()
 	
 	m_deviceContext->VSSetConstantBuffers(1, 1, m_objectCBuffer.GetBuffer());
 
-	for (int i = 0; i < m_textures.size(); ++i)
-	{
-		m_deviceContext->PSSetShaderResources(0, 1, &m_textures[i]);
-	}
-
 	for (int i = 0; i < m_meshes.size(); ++i)
 	{
 		m_objectCBuffer.Data.worldMatrix = m_meshes[i]->GetTransform() * m_worldMatrix;
@@ -118,6 +99,8 @@ bool VisibleGameObject::LoadTexture(const std::string& path)
 		return false;
 	}
 
+	m_deviceContext->GenerateMips(texture);
+
 	m_textures.push_back(texture);
 
 	return true;
@@ -125,19 +108,27 @@ bool VisibleGameObject::LoadTexture(const std::string& path)
 
 bool VisibleGameObject::LoadModel(const std::string& path)
 {
-	Assimp::Importer importer;
+	try
+	{
+		Assimp::Importer importer;
 
-	const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_ConvertToLeftHanded);
-	if (!scene) return false;
+		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_ConvertToLeftHanded);
+		if (!scene) return false;
 
-	aiNode* node = scene->mRootNode;
+		aiNode* node = scene->mRootNode;
 
-	LoadNode(node, scene, DirectX::XMMatrixIdentity());
+		LoadNode(node, scene, DirectX::XMMatrixIdentity());
 
-	m_loaded = true;
-	AreObjectsLoading = false;
-
-	return true;
+		m_loaded = true;
+		AreObjectsLoading = false;
+		return true;
+	}
+	catch (...)
+	{
+		LOG_ERROR("Error loading model: " + path);
+		AreObjectsLoading = false;
+		return false;		
+	}
 }
 
 void VisibleGameObject::LoadNode(aiNode* node, const aiScene* scene, const DirectX::XMMATRIX& parentTransform)
@@ -191,8 +182,32 @@ Mesh* VisibleGameObject::LoadMesh(aiMesh* mesh, const aiScene* scene, const Dire
 		}
 	}
 
-	return new Mesh( m_device, m_deviceContext, vertices, indices, parentTransform);
+	std::vector<Texture> texturesForMesh;
+
+	if (mesh->mMaterialIndex >= 0)
+	{
+		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+		aiString textureFileName;
+		std::string stdTextureFileName;
+
+		if (material->GetTexture(aiTextureType_SPECULAR, 0, &textureFileName) == aiReturn_SUCCESS)
+		{
+			stdTextureFileName = textureFileName.C_Str();
+			texturesForMesh.emplace_back(m_device, FILE_TEXTURE(stdTextureFileName), 1);
+		}
+
+		aiReturn ret = material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFileName);
+
+		if (ret == aiReturn_SUCCESS)
+		{
+			stdTextureFileName = textureFileName.C_Str();
+			texturesForMesh.emplace_back(m_device, FILE_TEXTURE(stdTextureFileName), 0);
+		}
+	}
+
+	return new Mesh(m_device, m_deviceContext, vertices, indices, texturesForMesh, parentTransform);
 }
+
 
 void VisibleGameObject::UpdateMatrix()
 {

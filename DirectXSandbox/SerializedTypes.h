@@ -42,7 +42,6 @@ struct SerializedObject
     std::string name;
     bool isVisibleObject;
     std::string model;
-    std::string texture;
     SerializedFloat3 position;
     SerializedFloat3 rotation;
     SerializedFloat3 scale;
@@ -66,10 +65,9 @@ struct SerializedObject
         name = _name;
         isVisibleObject = true;
         model = object->GetModelFile();
-        texture = object->GetTextureFile();
     }
 
-    JS_OBJ(name, isVisibleObject, model, texture, position, rotation, scale);
+    JS_OBJ(name, isVisibleObject, model, position, rotation, scale);
 };
 
 struct SerializedScene

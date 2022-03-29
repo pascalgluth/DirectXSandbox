@@ -107,7 +107,7 @@ void Graphics::RenderFrame(ObjectManager* pObjectManager)
 
     m_ambientLight.ApplyBuffer(0);
     m_pointLight.ApplyBuffer(1);
-    m_spotLight.ApplyBuffer(2);
+    //m_spotLight.ApplyBuffer(0);
 
     pObjectManager->Render();
 
@@ -116,6 +116,7 @@ void Graphics::RenderFrame(ObjectManager* pObjectManager)
     m_ambientLight.Render();
     m_spotLight.Render();
     m_pointLight.Render();
+
 
     Gui::Render();
 
@@ -166,11 +167,13 @@ bool Graphics::InitializeDirectX()
     }
 
     D3D11_SAMPLER_DESC samplerDesc{};
-    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
     samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
     samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
     samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MaxAnisotropy = D3D11_REQ_MAXANISOTROPY;
+    samplerDesc.MipLODBias = 0.f;
     samplerDesc.MinLOD = 0.f;
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
     hr = m_device->CreateSamplerState(&samplerDesc, &m_samplerState);
@@ -311,25 +314,19 @@ bool Graphics::SetupScene()
 
     m_ambientLight.Init(m_device, m_deviceContext);
 
-    m_ambientLight.GetCBuffer()->Data.color.x = 1.f;
+    /*m_ambientLight.GetCBuffer()->Data.color.x = 1.f;
     m_ambientLight.GetCBuffer()->Data.color.y = 1.f;
     m_ambientLight.GetCBuffer()->Data.color.z = 1.f;
-    m_ambientLight.GetCBuffer()->Data.strength = 1.f;
+    m_ambientLight.GetCBuffer()->Data.strength = 1.f;*/
 
     m_pointLight.Init(m_device, m_deviceContext);
-
-    m_pointLight.GetCBuffer()->Data.color = DirectX::XMFLOAT3(1.f, 1.f, 1.f);
-    m_pointLight.GetCBuffer()->Data.position = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
-    m_pointLight.GetCBuffer()->Data.strength = 1.f;
-    m_pointLight.GetCBuffer()->Data.pointLightAttenuation = 1.f;
-    m_pointLight.GetCBuffer()->Data.pointLightMaximumCalcDistance = 1000.f;
-
-    m_spotLight.Init(m_device, m_deviceContext);
+    
+    /*m_spotLight.Init(m_device, m_deviceContext);
 
     m_spotLight.GetCBuffer()->Data.position = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
     m_spotLight.GetCBuffer()->Data.direction = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
     m_spotLight.GetCBuffer()->Data.strength = 10.f;
-    m_spotLight.GetCBuffer()->Data.spotLightDistance = 10000.f;
+    m_spotLight.GetCBuffer()->Data.spotLightDistance = 10000.f;*/
     
     /*std::vector<float> vertices;
     std::vector<int> indices;
@@ -383,10 +380,9 @@ bool Graphics::SetupScene()
 
     // -100 -15 500
 
-    std::string textures2[] = { FILE_TEXTURE("bottle.png") };
-    m_rigidBodyObject.Init(FILE_MODEL("bottle.obj"), textures2, 1, m_device, m_deviceContext);
+    m_rigidBodyObject.Init(FILE_MODEL("bottle.obj"), m_device, m_deviceContext);
     m_rigidBodyObject.SetPosition(XMFLOAT3(-100.f, -15.f, 500.f));
     m_rigidBodyObject.SetupPhysics(&m_physicsCommon, m_physicsWorld);
-
+    
     return true;
 }

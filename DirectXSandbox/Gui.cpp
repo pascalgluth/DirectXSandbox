@@ -330,7 +330,6 @@ void Gui::RenderCreateObjectMenu()
 	{
 		static char name[50];
 		static char model[50];
-		static char texture[50];
 
 		ImGui::Text("Name: ");
 		ImGui::SameLine();
@@ -340,13 +339,9 @@ void Gui::RenderCreateObjectMenu()
 		ImGui::SameLine();
 		ImGui::InputText("##txtModel", model, sizeof(model));
 
-		ImGui::Text("Texture: ");
-		ImGui::SameLine();
-		ImGui::InputText("##txtTexture", texture, sizeof(texture));
-
 		if (ImGui::Button("Create"))
 		{
-			Engine::GetObjectManager()->CreateVisibleObject<VisibleGameObject>(name, FILE_MODEL(model), FILE_TEXTURE(texture));
+			Engine::GetObjectManager()->CreateVisibleObject<VisibleGameObject>(name, FILE_MODEL(model));
 			createObjectMenu = false;
 		}
 	}

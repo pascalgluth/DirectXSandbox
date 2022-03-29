@@ -2,22 +2,22 @@ namespace LightFX
 {
     struct AmbientLight
     {
-        float3 ambientLightposition;
-        float ambientLightstrength;
-        float3 ambientLightdirection;
-        float _padding;
-        float3 ambientLightcolor;
+        float4 ambient;
+        float4 diffuse;
+        float4 specular;
     };
 
     struct PointLight
     {
-        float3 pointLightPosition;
-        float pointLightStrength;
-        float3 pointLightDirection;
-        float _padding;
-        float3 pointLightColor;
-        float pointLightAttenuation;
-        float pointLightMaximumCalcDistance;
+        float4 ambient;
+        float4 diffuse;
+        float4 specular;
+
+        float3 position;
+        float range;
+
+        float3 attenuation;
+        float padding;
     };
 
     struct SpotLight
@@ -30,19 +30,27 @@ namespace LightFX
         float spotLightDistance;
         float attenuation;
     };
-    
-    bool computePointLight(float3 pixelWorldPos, float3 normal, PointLight inPointLight,
-        out float3 outPointLight)
+
+    void computePointLight(float3 pixelWorldPos, float3 normal, float3 eyePos, PointLight inPointLight,
+        float4 inDiffuse, float4 inSpecular,
+        out float4 outAmbient, out float4 outDiffuse, out float4 outSpecular)
     {
-        float distanceToLight = distance(inPointLight.pointLightPosition, pixelWorldPos);
-        if (distanceToLight > inPointLight.pointLightMaximumCalcDistance)
-            return false;
-        
-        float3 vecToLight = normalize(inPointLight.pointLightPosition - pixelWorldPos);
-        float3 pointLightIntensity = max(dot(vecToLight, normal), 0);
-        outPointLight = pointLightIntensity * (inPointLight.pointLightStrength / (distanceToLight * inPointLight.pointLightAttenuation)) * inPointLight.pointLightColor;
-        
-        return true;
+        outAmbient = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        outDiffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        outSpecular = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+        float3 vectorToLight = normalize(inPointLight.position - pixelWorldPos);
+        float diffuseFactor = max(dot(vectorToLight, normal), 0);
+        float distanceToLight = distance(inPointLight.position, pixelWorldPos);
+        //float diffuseAttenuation = 1.f / (inPointLight.attenuation.x + inPointLight.attenuation.y * distanceToLight + inPointLight.attenuation.z * pow(distanceToLight, 2));
+        diffuseFactor = diffuseFactor / (distanceToLight * inPointLight.attenuation.x);
+        outDiffuse = inPointLight.diffuse * diffuseFactor;
+
+        float3 viewDirection = normalize(eyePos - pixelWorldPos);
+        float3 reflectDirection = reflect(-vectorToLight, normal);
+
+        float specFactor = pow(max(dot(viewDirection, reflectDirection), 0.f), 32);
+        outSpecular = inPointLight.specular * specFactor;
     }
     
     bool computeSpotLight(float3 pixelWorldPos, float3 normal, float3 eyePos, SpotLight inSpotLight,
