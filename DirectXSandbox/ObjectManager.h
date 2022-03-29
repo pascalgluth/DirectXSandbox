@@ -38,7 +38,7 @@ public:
         VisibleGameObject* newObject = new T();
         if (!newObject) return nullptr;
 
-        if (!newObject->Init(model, m_device, m_deviceContext))
+        if (!newObject->InitAsync(model, m_device, m_deviceContext))
             return nullptr;
 
         m_objects.emplace(std::pair(name, newObject));

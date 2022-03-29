@@ -843,9 +843,8 @@ bool ImGui::CollapseButton(ImGuiID id, const ImVec2& pos)
     // Render
     ImU32 bg_col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
     ImU32 text_col = GetColorU32(ImGuiCol_Text);
-    ImVec2 center = bb.GetCenter();
     if (hovered || held)
-        window->DrawList->AddCircleFilled(center/*+ ImVec2(0.0f, -0.5f)*/, g.FontSize * 0.5f + 1.0f, bg_col, 12);
+        window->DrawList->AddCircleFilled(bb.GetCenter()/*+ ImVec2(0.0f, -0.5f)*/, g.FontSize * 0.5f + 1.0f, bg_col, 12);
     RenderArrow(window->DrawList, bb.Min + g.Style.FramePadding, text_col, window->Collapsed ? ImGuiDir_Right : ImGuiDir_Down, 1.0f);
 
     // Switch to moving the window after mouse is moved beyond the initial drag threshold
@@ -3816,7 +3815,7 @@ static bool InputTextFilterCharacter(unsigned int* p_char, ImGuiInputTextFlags f
     if (c < 0x20)
     {
         bool pass = false;
-        pass |= (c == '\n' && (flags & ImGuiInputTextFlags_Multiline));
+        pass |= (c == '\n' && (flags & ImGuiInputTextFlags_Multiline)); // Note that an Enter KEY will emit \r and be ignored (we poll for KEY in InputText() code)
         pass |= (c == '\t' && (flags & ImGuiInputTextFlags_AllowTabInput));
         if (!pass)
             return false;
@@ -4202,16 +4201,15 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
         if (state->SelectedAllMouseLock && !io.MouseDown[0])
             state->SelectedAllMouseLock = false;
 
-        // It is ill-defined whether the backend needs to send a \t character when pressing the TAB keys.
-        // Win32 and GLFW naturally do it but not SDL.
+        // We except backends to emit a Tab key but some also emit a Tab character which we ignore (#2467, #1336)
+        // (For Tab and Enter: Win32/SFML/Allegro are sending both keys and chars, GLFW and SDL are only sending keys. For Space they all send all threes)
         const bool ignore_char_inputs = (io.KeyCtrl && !io.KeyAlt) || (is_osx && io.KeySuper);
         if ((flags & ImGuiInputTextFlags_AllowTabInput) && IsKeyPressed(ImGuiKey_Tab) && !ignore_char_inputs && !io.KeyShift && !is_readonly)
-            if (!io.InputQueueCharacters.contains('\t'))
-            {
-                unsigned int c = '\t'; // Insert TAB
-                if (InputTextFilterCharacter(&c, flags, callback, callback_user_data, ImGuiInputSource_Keyboard))
-                    state->OnKeyPressed((int)c);
-            }
+        {
+            unsigned int c = '\t'; // Insert TAB
+            if (InputTextFilterCharacter(&c, flags, callback, callback_user_data, ImGuiInputSource_Keyboard))
+                state->OnKeyPressed((int)c);
+        }
 
         // Process regular text input (before we check for Return because using some IME will effectively send a Return?)
         // We ignore CTRL inputs, but need to allow ALT+CTRL as some keyboards (e.g. German) use AltGR (which _is_ Alt+Ctrl) to input certain characters.
@@ -4222,7 +4220,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
                 {
                     // Insert character if they pass filtering
                     unsigned int c = (unsigned int)io.InputQueueCharacters[n];
-                    if (c == '\t' && io.KeyShift)
+                    if (c == '\t') // Skip Tab, see above.
                         continue;
                     if (InputTextFilterCharacter(&c, flags, callback, callback_user_data, ImGuiInputSource_Keyboard))
                         state->OnKeyPressed((int)c);
@@ -5456,7 +5454,7 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
 // FIXME: May want to display/ignore the alpha component in the color display? Yet show it in the tooltip.
 // 'desc_id' is not called 'label' because we don't display it next to the button, but only in the tooltip.
 // Note that 'col' may be encoded in HSV if ImGuiColorEditFlags_InputHSV is set.
-bool ImGui::ColorButton(const char* desc_id, const ImVec4& col, ImGuiColorEditFlags flags, ImVec2 size)
+bool ImGui::ColorButton(const char* desc_id, const ImVec4& col, ImGuiColorEditFlags flags, const ImVec2& size_arg)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
@@ -5464,11 +5462,8 @@ bool ImGui::ColorButton(const char* desc_id, const ImVec4& col, ImGuiColorEditFl
 
     ImGuiContext& g = *GImGui;
     const ImGuiID id = window->GetID(desc_id);
-    float default_size = GetFrameHeight();
-    if (size.x == 0.0f)
-        size.x = default_size;
-    if (size.y == 0.0f)
-        size.y = default_size;
+    const float default_size = GetFrameHeight();
+    const ImVec2 size(size_arg.x == 0.0f ? default_size : size_arg.x, size_arg.y == 0.0f ? default_size : size_arg.y);
     const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
     ItemSize(bb, (size.y >= default_size) ? g.Style.FramePadding.y : 0.0f);
     if (!ItemAdd(bb, id))
@@ -6937,7 +6932,7 @@ bool ImGui::BeginMenuEx(const char* label, const char* icon, bool enabled)
     {
         // Close menu when not hovering it anymore unless we are moving roughly in the direction of the menu
         // Implement http://bjk5.com/post/44698559168/breaking-down-amazons-mega-dropdown to avoid using timers, so menus feels more reactive.
-        bool moving_toward_other_child_menu = false;
+        bool moving_toward_child_menu = false;
         ImGuiWindow* child_menu_window = (g.BeginPopupStack.Size < g.OpenPopupStack.Size && g.OpenPopupStack[g.BeginPopupStack.Size].SourceWindow == window) ? g.OpenPopupStack[g.BeginPopupStack.Size].Window : NULL;
         if (g.HoveredWindow == window && child_menu_window != NULL && !(window->Flags & ImGuiWindowFlags_MenuBar))
         {
@@ -6948,18 +6943,22 @@ bool ImGui::BeginMenuEx(const char* label, const char* icon, bool enabled)
             ImVec2 tc = (window->Pos.x < child_menu_window->Pos.x) ? next_window_rect.GetBL() : next_window_rect.GetBR();
             float extra = ImClamp(ImFabs(ta.x - tb.x) * 0.30f, ref_unit * 0.5f, ref_unit * 2.5f);   // add a bit of extra slack.
             ta.x += (window->Pos.x < child_menu_window->Pos.x) ? -0.5f : +0.5f;                     // to avoid numerical issues (FIXME: ??)
-            tb.y = ta.y + ImMax((tb.y - extra) - ta.y, -ref_unit * 8.0f);                           // triangle is maximum 200 high to limit the slope and the bias toward large sub-menus // FIXME: Multiply by fb_scale?
+            tb.y = ta.y + ImMax((tb.y - extra) - ta.y, -ref_unit * 8.0f);                           // triangle has maximum height to limit the slope and the bias toward large sub-menus
             tc.y = ta.y + ImMin((tc.y + extra) - ta.y, +ref_unit * 8.0f);
-            moving_toward_other_child_menu = ImTriangleContainsPoint(ta, tb, tc, g.IO.MousePos);
+            moving_toward_child_menu = ImTriangleContainsPoint(ta, tb, tc, g.IO.MousePos);
             //GetForegroundDrawList()->AddTriangleFilled(ta, tb, tc, moving_toward_other_child_menu ? IM_COL32(0,128,0,128) : IM_COL32(128,0,0,128)); // [DEBUG]
         }
-        if (menu_is_open && !hovered && g.HoveredWindow == window && g.HoveredIdPreviousFrame != 0 && g.HoveredIdPreviousFrame != id && !moving_toward_other_child_menu)
+
+        // The 'HovereWindow == window' check creates an inconsistency (e.g. moving away from menu slowly tends to hit same window, whereas moving away fast does not)
+        // But we also need to not close the top-menu menu when moving over void. Perhaps we should extend the triangle check to a larger polygon.
+        // (Remember to test this on BeginPopup("A")->BeginMenu("B") sequence which behaves slightly differently as B isn't a Child of A and hovering isn't shared.)
+        if (menu_is_open && !hovered && g.HoveredWindow == window && !moving_toward_child_menu)
             want_close = true;
 
         // Open
         if (!menu_is_open && pressed) // Click/activate to open
             want_open = true;
-        else if (!menu_is_open && hovered && !moving_toward_other_child_menu) // Hover to open
+        else if (!menu_is_open && hovered && !moving_toward_child_menu) // Hover to open
             want_open = true;
         if (g.NavId == id && g.NavMoveDir == ImGuiDir_Right) // Nav-Right to open
         {

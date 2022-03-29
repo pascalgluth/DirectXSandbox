@@ -90,7 +90,7 @@ Index of this file:
 #endif
 
 //-------------------------------------------------------------------------
-// [SECTION] STB libraries implementation
+// [SECTION] STB libraries implementation (for stb_truetype and stb_rect_pack)
 //-------------------------------------------------------------------------
 
 // Compile time options:
@@ -580,7 +580,7 @@ int ImDrawList::_CalcCircleAutoSegmentCount(float radius) const
 }
 
 // Render-level scissoring. This is passed down to your render function but not used for CPU-side coarse clipping. Prefer using higher-level ImGui::PushClipRect() to affect logic (hit-testing and widget culling)
-void ImDrawList::PushClipRect(ImVec2 cr_min, ImVec2 cr_max, bool intersect_with_current_clip_rect)
+void ImDrawList::PushClipRect(const ImVec2& cr_min, const ImVec2& cr_max, bool intersect_with_current_clip_rect)
 {
     ImVec4 cr(cr_min.x, cr_min.y, cr_max.x, cr_max.y);
     if (intersect_with_current_clip_rect)
@@ -794,11 +794,11 @@ void ImDrawList::AddPolyline(const ImVec2* points, const int points_count, ImU32
             // Generate the indices to form a number of triangles for each line segment, and the vertices for the line edges
             // This takes points n and n+1 and writes into n+1, with the first point in a closed line being generated from the final one (as n+1 wraps)
             // FIXME-OPT: Merge the different loops, possibly remove the temporary buffer.
-            unsigned int idx1 = _VtxCurrentIdx; // Vertex3D index for start of line segment
+            unsigned int idx1 = _VtxCurrentIdx; // Vertex index for start of line segment
             for (int i1 = 0; i1 < count; i1++) // i1 is the first point of the line segment
             {
                 const int i2 = (i1 + 1) == points_count ? 0 : i1 + 1; // i2 is the second point of the line segment
-                const unsigned int idx2 = ((i1 + 1) == points_count) ? _VtxCurrentIdx : (idx1 + (use_texture ? 2 : 3)); // Vertex3D index for end of segment
+                const unsigned int idx2 = ((i1 + 1) == points_count) ? _VtxCurrentIdx : (idx1 + (use_texture ? 2 : 3)); // Vertex index for end of segment
 
                 // Average normals
                 float dm_x = (temp_normals[i1].x + temp_normals[i2].x) * 0.5f;
@@ -890,11 +890,11 @@ void ImDrawList::AddPolyline(const ImVec2* points, const int points_count, ImU32
             // Generate the indices to form a number of triangles for each line segment, and the vertices for the line edges
             // This takes points n and n+1 and writes into n+1, with the first point in a closed line being generated from the final one (as n+1 wraps)
             // FIXME-OPT: Merge the different loops, possibly remove the temporary buffer.
-            unsigned int idx1 = _VtxCurrentIdx; // Vertex3D index for start of line segment
+            unsigned int idx1 = _VtxCurrentIdx; // Vertex index for start of line segment
             for (int i1 = 0; i1 < count; i1++) // i1 is the first point of the line segment
             {
                 const int i2 = (i1 + 1) == points_count ? 0 : (i1 + 1); // i2 is the second point of the line segment
-                const unsigned int idx2 = (i1 + 1) == points_count ? _VtxCurrentIdx : (idx1 + 4); // Vertex3D index for end of segment
+                const unsigned int idx2 = (i1 + 1) == points_count ? _VtxCurrentIdx : (idx1 + 4); // Vertex index for end of segment
 
                 // Average normals
                 float dm_x = (temp_normals[i1].x + temp_normals[i2].x) * 0.5f;
@@ -973,7 +973,8 @@ void ImDrawList::AddPolyline(const ImVec2* points, const int points_count, ImU32
     }
 }
 
-// We intentionally avoid using ImVec2 and its math operators here to reduce cost to a minimum for debug/non-inlined builds.
+// - We intentionally avoid using ImVec2 and its math operators here to reduce cost to a minimum for debug/non-inlined builds.
+// - Filled shapes must always use clockwise winding order. The anti-aliasing fringe depends on it. Counter-clockwise shapes will have "inward" anti-aliasing.
 void ImDrawList::AddConvexPolyFilled(const ImVec2* points, const int points_count, ImU32 col)
 {
     if (points_count < 3)
@@ -2637,8 +2638,8 @@ void ImFontAtlasBuildPackCustomRects(ImFontAtlas* atlas, void* stbrp_context_opa
     for (int i = 0; i < pack_rects.Size; i++)
         if (pack_rects[i].was_packed)
         {
-            user_rects[i].X = pack_rects[i].x;
-            user_rects[i].Y = pack_rects[i].y;
+            user_rects[i].X = (unsigned short)pack_rects[i].x;
+            user_rects[i].Y = (unsigned short)pack_rects[i].y;
             IM_ASSERT(pack_rects[i].w == user_rects[i].Width && pack_rects[i].h == user_rects[i].Height);
             atlas->TexHeight = ImMax(atlas->TexHeight, pack_rects[i].y + pack_rects[i].h);
         }
@@ -2738,13 +2739,13 @@ static void ImFontAtlasBuildRenderLinesTexData(ImFontAtlas* atlas)
         {
             unsigned int* write_ptr = &atlas->TexPixelsRGBA32[r->X + ((r->Y + y) * atlas->TexWidth)];
             for (unsigned int i = 0; i < pad_left; i++)
-                *(write_ptr + i) = IM_COL32_BLACK_TRANS;
+                *(write_ptr + i) = IM_COL32(255, 255, 255, 0);
 
             for (unsigned int i = 0; i < line_width; i++)
                 *(write_ptr + pad_left + i) = IM_COL32_WHITE;
 
             for (unsigned int i = 0; i < pad_right; i++)
-                *(write_ptr + pad_left + line_width + i) = IM_COL32_BLACK_TRANS;
+                *(write_ptr + pad_left + line_width + i) = IM_COL32(255, 255, 255, 0);
         }
 
         // Calculate UVs for this line
@@ -3523,7 +3524,7 @@ ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, cons
 }
 
 // Note: as with every ImDrawList drawing function, this expects that the font atlas texture is bound.
-void ImFont::RenderChar(ImDrawList* draw_list, float size, ImVec2 pos, ImU32 col, ImWchar c) const
+void ImFont::RenderChar(ImDrawList* draw_list, float size, const ImVec2& pos, ImU32 col, ImWchar c) const
 {
     const ImFontGlyph* glyph = FindGlyph(c);
     if (!glyph || !glyph->Visible)
@@ -3531,26 +3532,25 @@ void ImFont::RenderChar(ImDrawList* draw_list, float size, ImVec2 pos, ImU32 col
     if (glyph->Colored)
         col |= ~IM_COL32_A_MASK;
     float scale = (size >= 0.0f) ? (size / FontSize) : 1.0f;
-    pos.x = IM_FLOOR(pos.x);
-    pos.y = IM_FLOOR(pos.y);
+    float x = IM_FLOOR(pos.x);
+    float y = IM_FLOOR(pos.y);
     draw_list->PrimReserve(6, 4);
-    draw_list->PrimRectUV(ImVec2(pos.x + glyph->X0 * scale, pos.y + glyph->Y0 * scale), ImVec2(pos.x + glyph->X1 * scale, pos.y + glyph->Y1 * scale), ImVec2(glyph->U0, glyph->V0), ImVec2(glyph->U1, glyph->V1), col);
+    draw_list->PrimRectUV(ImVec2(x + glyph->X0 * scale, y + glyph->Y0 * scale), ImVec2(x + glyph->X1 * scale, y + glyph->Y1 * scale), ImVec2(glyph->U0, glyph->V0), ImVec2(glyph->U1, glyph->V1), col);
 }
 
 // Note: as with every ImDrawList drawing function, this expects that the font atlas texture is bound.
-void ImFont::RenderText(ImDrawList* draw_list, float size, ImVec2 pos, ImU32 col, const ImVec4& clip_rect, const char* text_begin, const char* text_end, float wrap_width, bool cpu_fine_clip) const
+void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, ImU32 col, const ImVec4& clip_rect, const char* text_begin, const char* text_end, float wrap_width, bool cpu_fine_clip) const
 {
     if (!text_end)
         text_end = text_begin + strlen(text_begin); // ImGui:: functions generally already provides a valid text_end, so this is merely to handle direct calls.
 
     // Align to be pixel perfect
-    pos.x = IM_FLOOR(pos.x);
-    pos.y = IM_FLOOR(pos.y);
-    float x = pos.x;
-    float y = pos.y;
+    float x = IM_FLOOR(pos.x);
+    float y = IM_FLOOR(pos.y);
     if (y > clip_rect.w)
         return;
 
+    const float start_x = x;
     const float scale = size / FontSize;
     const float line_height = FontSize * scale;
     const bool word_wrap_enabled = (wrap_width > 0.0f);
@@ -3602,14 +3602,14 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, ImVec2 pos, ImU32 col
             // Calculate how far we can render. Requires two passes on the string data but keeps the code simple and not intrusive for what's essentially an uncommon feature.
             if (!word_wrap_eol)
             {
-                word_wrap_eol = CalcWordWrapPositionA(scale, s, text_end, wrap_width - (x - pos.x));
+                word_wrap_eol = CalcWordWrapPositionA(scale, s, text_end, wrap_width - (x - start_x));
                 if (word_wrap_eol == s) // Wrap_width is too small to fit anything. Force displaying 1 character to minimize the height discontinuity.
                     word_wrap_eol++;    // +1 may not be a character start point in UTF-8 but it's ok because we use s >= word_wrap_eol below
             }
 
             if (s >= word_wrap_eol)
             {
-                x = pos.x;
+                x = start_x;
                 y += line_height;
                 word_wrap_eol = NULL;
 
@@ -3640,7 +3640,7 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, ImVec2 pos, ImU32 col
         {
             if (c == '\n')
             {
-                x = pos.x;
+                x = start_x;
                 y += line_height;
                 if (y > clip_rect.w)
                     break; // break out of main loop
@@ -3878,7 +3878,7 @@ void ImGui::RenderRectFilledRangeH(ImDrawList* draw_list, const ImRect& rect, Im
     draw_list->PathFillConvex(col);
 }
 
-void ImGui::RenderRectFilledWithHole(ImDrawList* draw_list, ImRect outer, ImRect inner, ImU32 col, float rounding)
+void ImGui::RenderRectFilledWithHole(ImDrawList* draw_list, const ImRect& outer, const ImRect& inner, ImU32 col, float rounding)
 {
     const bool fill_L = (inner.Min.x > outer.Min.x);
     const bool fill_R = (inner.Max.x < outer.Max.x);

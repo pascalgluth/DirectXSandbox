@@ -232,7 +232,7 @@ namespace ImStb
 #define IM_NEWLINE                      "\n"
 #endif
 #define IM_TABSIZE                      (4)
-#define IM_MEMALIGN(_OFF,_ALIGN)        (((_OFF) + (_ALIGN - 1)) & ~(_ALIGN - 1))               // Memory align e.g. IM_ALIGN(0,4)=0, IM_ALIGN(1,4)=4, IM_ALIGN(4,4)=4, IM_ALIGN(5,4)=8
+#define IM_MEMALIGN(_OFF,_ALIGN)        (((_OFF) + ((_ALIGN) - 1)) & ~((_ALIGN) - 1))           // Memory align e.g. IM_ALIGN(0,4)=0, IM_ALIGN(1,4)=4, IM_ALIGN(4,4)=4, IM_ALIGN(5,4)=8
 #define IM_F32_TO_INT8_UNBOUND(_VAL)    ((int)((_VAL) * 255.0f + ((_VAL)>=0 ? 0.5f : -0.5f)))   // Unsaturated, for display purpose
 #define IM_F32_TO_INT8_SAT(_VAL)        ((int)(ImSaturate(_VAL) * 255.0f + 0.5f))               // Saturated, always output 0..255
 #define IM_FLOOR(_VAL)                  ((float)(int)(_VAL))                                    // ImFloor() is not inlined in MSVC debug builds
@@ -279,7 +279,8 @@ namespace ImStb
 // - Helpers: Hashing
 // - Helpers: Sorting
 // - Helpers: Bit manipulation
-// - Helpers: String, Formatting
+// - Helpers: String
+// - Helpers: Formatting
 // - Helpers: UTF-8 <> wchar conversions
 // - Helpers: ImVec2/ImVec4 operators
 // - Helpers: Maths
@@ -297,9 +298,6 @@ namespace ImStb
 // Helpers: Hashing
 IMGUI_API ImGuiID       ImHashData(const void* data, size_t data_size, ImU32 seed = 0);
 IMGUI_API ImGuiID       ImHashStr(const char* data, size_t data_size = 0, ImU32 seed = 0);
-#ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
-static inline ImGuiID   ImHash(const void* data, int size, ImU32 seed = 0) { return size ? ImHashData(data, (size_t)size, seed) : ImHashStr((const char*)data, 0, seed); } // [moved to ImHashStr/ImHashData in 1.68]
-#endif
 
 // Helpers: Sorting
 #ifndef ImQsort
@@ -314,7 +312,7 @@ static inline bool      ImIsPowerOfTwo(int v)           { return v != 0 && (v & 
 static inline bool      ImIsPowerOfTwo(ImU64 v)         { return v != 0 && (v & (v - 1)) == 0; }
 static inline int       ImUpperPowerOfTwo(int v)        { v--; v |= v >> 1; v |= v >> 2; v |= v >> 4; v |= v >> 8; v |= v >> 16; v++; return v; }
 
-// Helpers: String, Formatting
+// Helpers: String
 IMGUI_API int           ImStricmp(const char* str1, const char* str2);
 IMGUI_API int           ImStrnicmp(const char* str1, const char* str2, size_t count);
 IMGUI_API void          ImStrncpy(char* dst, const char* src, size_t count);
@@ -327,14 +325,16 @@ IMGUI_API const ImWchar*ImStrbolW(const ImWchar* buf_mid_line, const ImWchar* bu
 IMGUI_API const char*   ImStristr(const char* haystack, const char* haystack_end, const char* needle, const char* needle_end);
 IMGUI_API void          ImStrTrimBlanks(char* str);
 IMGUI_API const char*   ImStrSkipBlank(const char* str);
+static inline bool      ImCharIsBlankA(char c)          { return c == ' ' || c == '\t'; }
+static inline bool      ImCharIsBlankW(unsigned int c)  { return c == ' ' || c == '\t' || c == 0x3000; }
+
+// Helpers: Formatting
 IMGUI_API int           ImFormatString(char* buf, size_t buf_size, const char* fmt, ...) IM_FMTARGS(3);
 IMGUI_API int           ImFormatStringV(char* buf, size_t buf_size, const char* fmt, va_list args) IM_FMTLIST(3);
 IMGUI_API const char*   ImParseFormatFindStart(const char* format);
 IMGUI_API const char*   ImParseFormatFindEnd(const char* format);
 IMGUI_API const char*   ImParseFormatTrimDecorations(const char* format, char* buf, size_t buf_size);
 IMGUI_API int           ImParseFormatPrecision(const char* format, int default_value);
-static inline bool      ImCharIsBlankA(char c)          { return c == ' ' || c == '\t'; }
-static inline bool      ImCharIsBlankW(unsigned int c)  { return c == ' ' || c == '\t' || c == 0x3000; }
 
 // Helpers: UTF-8 <> wchar conversions
 IMGUI_API const char*   ImTextCharToUtf8(char out_buf[5], unsigned int c);                                                      // return out_buf
@@ -776,9 +776,9 @@ enum ImGuiItemStatusFlags_
 
 #ifdef IMGUI_ENABLE_TEST_ENGINE
     , // [imgui_tests only]
-    ImGuiItemStatusFlags_Openable           = 1 << 20,  //
+    ImGuiItemStatusFlags_Openable           = 1 << 20,  // Item is an openable (e.g. TreeNode)
     ImGuiItemStatusFlags_Opened             = 1 << 21,  //
-    ImGuiItemStatusFlags_Checkable          = 1 << 22,  //
+    ImGuiItemStatusFlags_Checkable          = 1 << 22,  // Item is a checkable (e.g. CheckBox, MenuItem)
     ImGuiItemStatusFlags_Checked            = 1 << 23   //
 #endif
 };
@@ -931,8 +931,8 @@ enum ImGuiDataTypePrivate_
 // Stacked color modifier, backup of modified data so we can restore it
 struct ImGuiColorMod
 {
-    ImGuiCol    Col;
-    ImVec4      BackupValue;
+    ImGuiCol        Col;
+    ImVec4          BackupValue;
 };
 
 // Stacked style modifier, backup of modified data so we can restore it. Data type inferred from the variable.
@@ -1294,7 +1294,7 @@ enum ImGuiNavHighlightFlags_
 enum ImGuiNavDirSourceFlags_
 {
     ImGuiNavDirSourceFlags_None             = 0,
-    ImGuiNavDirSourceFlags_RawKeyboard      = 1 << 0,   // Raw keyboard (not pulled from nav), faciliate use of some functions before we can unify nav and keys
+    ImGuiNavDirSourceFlags_RawKeyboard      = 1 << 0,   // Raw keyboard (not pulled from nav), facilitate use of some functions before we can unify nav and keys
     ImGuiNavDirSourceFlags_Keyboard         = 1 << 1,
     ImGuiNavDirSourceFlags_PadDPad          = 1 << 2,
     ImGuiNavDirSourceFlags_PadLStick        = 1 << 3
@@ -1549,7 +1549,7 @@ struct ImGuiContextHook
 };
 
 //-----------------------------------------------------------------------------
-// [SECTION] ImGuiContext (main imgui context)
+// [SECTION] ImGuiContext (main Dear ImGui context)
 //-----------------------------------------------------------------------------
 
 struct ImGuiContext
@@ -1646,7 +1646,7 @@ struct ImGuiContext
     ImVector<ImGuiViewportP*> Viewports;                        // Active viewports (Size==1 in 'master' branch). Each viewports hold their copy of ImDrawData.
 
     // Gamepad/keyboard Navigation
-    ImGuiWindow*            NavWindow;                          // Focused window for navigation. Could be called 'FocusWindow'
+    ImGuiWindow*            NavWindow;                          // Focused window for navigation. Could be called 'FocusedWindow'
     ImGuiID                 NavId;                              // Focused item for navigation
     ImGuiID                 NavFocusScopeId;                    // Identify a selection scope (selection code often wants to "clear other items" when landing on an item of the selection set)
     ImGuiID                 NavActivateId;                      // ~~ (g.ActiveId == 0) && IsNavInputPressed(ImGuiNavInput_Activate) ? NavId : 0, also set when calling ActivateItem()
@@ -1726,7 +1726,7 @@ struct ImGuiContext
     int                             ClipperTempDataStacked;
     ImVector<ImGuiListClipperData>  ClipperTempData;
 
-    // Table
+    // Tables
     ImGuiTable*                     CurrentTable;
     int                             TablesTempDataStacked;      // Temporary table data size (because we leave previous instances undestructed, we generally don't use TablesTempData.Size)
     ImVector<ImGuiTableTempData>    TablesTempData;             // Temporary table data (buffers reused/shared across instances, support nesting)
@@ -2017,6 +2017,7 @@ struct IMGUI_API ImGuiWindow
     char*                   Name;                               // Window name, owned by the window.
     ImGuiID                 ID;                                 // == ImHashStr(Name)
     ImGuiWindowFlags        Flags;                              // See enum ImGuiWindowFlags_
+    ImGuiViewportP*         Viewport;                           // Always set in Begin(). Inactive windows may have a NULL value here if their viewport was discarded.
     ImVec2                  Pos;                                // Position (always rounded-up to nearest pixel)
     ImVec2                  Size;                               // Current size (==SizeFull or collapsed title bar size)
     ImVec2                  SizeFull;                           // Size when non collapsed
@@ -2519,8 +2520,8 @@ namespace ImGui
     IMGUI_API ImDrawList*   GetForegroundDrawList(ImGuiViewport* viewport);                     // get foreground draw list for the given viewport. this draw list will be the last rendered one. Useful to quickly draw shapes/text over dear imgui contents.
 
     // Init
-    IMGUI_API void          Initialize(ImGuiContext* context);
-    IMGUI_API void          Shutdown(ImGuiContext* context);    // Since 1.60 this is a _private_ function. You can call DestroyContext() to destroy the context created by CreateContext().
+    IMGUI_API void          Initialize();
+    IMGUI_API void          Shutdown();    // Since 1.60 this is a _private_ function. You can call DestroyContext() to destroy the context created by CreateContext().
 
     // NewFrame
     IMGUI_API void          UpdateInputEvents(bool trickle_fast_inputs);
@@ -2534,6 +2535,9 @@ namespace ImGui
     IMGUI_API void          RemoveContextHook(ImGuiContext* context, ImGuiID hook_to_remove);
     IMGUI_API void          CallContextHooks(ImGuiContext* context, ImGuiContextHookType type);
 
+    // Viewports
+    IMGUI_API void          SetWindowViewport(ImGuiWindow* window, ImGuiViewportP* viewport);
+
     // Settings
     IMGUI_API void                  MarkIniSettingsDirty();
     IMGUI_API void                  MarkIniSettingsDirty(ImGuiWindow* window);
@@ -2541,6 +2545,8 @@ namespace ImGui
     IMGUI_API ImGuiWindowSettings*  CreateNewWindowSettings(const char* name);
     IMGUI_API ImGuiWindowSettings*  FindWindowSettings(ImGuiID id);
     IMGUI_API ImGuiWindowSettings*  FindOrCreateWindowSettings(const char* name);
+    IMGUI_API void                  AddSettingsHandler(const ImGuiSettingsHandler* handler);
+    IMGUI_API void                  RemoveSettingsHandler(const char* type_name);
     IMGUI_API ImGuiSettingsHandler* FindSettingsHandler(const char* type_name);
 
     // Scrolling
@@ -2676,7 +2682,7 @@ namespace ImGui
     inline bool             IsNavInputTest(ImGuiNavInput n, ImGuiInputReadMode rm)      { return (GetNavInputAmount(n, rm) > 0.0f); }
     IMGUI_API ImGuiKeyModFlags GetMergedKeyModFlags();
 #ifndef IMGUI_DISABLE_OBSOLETE_KEYIO
-    inline bool             IsKeyPressedMap(ImGuiKey key, bool repeat = true)           { IM_ASSERT(IsNamedKey(key)); return IsKeyPressed(key, repeat); }
+    inline bool             IsKeyPressedMap(ImGuiKey key, bool repeat = true)           { IM_ASSERT(IsNamedKey(key)); return IsKeyPressed(key, repeat); } // [removed in 1.87]
 #endif
 
     // Drag and Drop
@@ -2744,7 +2750,7 @@ namespace ImGui
     IMGUI_API void                  TableSaveSettings(ImGuiTable* table);
     IMGUI_API void                  TableResetSettings(ImGuiTable* table);
     IMGUI_API ImGuiTableSettings*   TableGetBoundSettings(ImGuiTable* table);
-    IMGUI_API void                  TableSettingsInstallHandler(ImGuiContext* context);
+    IMGUI_API void                  TableSettingsAddSettingsHandler();
     IMGUI_API ImGuiTableSettings*   TableSettingsCreate(ImGuiID id, int columns_count);
     IMGUI_API ImGuiTableSettings*   TableSettingsFindByID(ImGuiID id);
 
@@ -2782,13 +2788,7 @@ namespace ImGui
     IMGUI_API void          RenderCheckMark(ImDrawList* draw_list, ImVec2 pos, ImU32 col, float sz);
     IMGUI_API void          RenderArrowPointingAt(ImDrawList* draw_list, ImVec2 pos, ImVec2 half_sz, ImGuiDir direction, ImU32 col);
     IMGUI_API void          RenderRectFilledRangeH(ImDrawList* draw_list, const ImRect& rect, ImU32 col, float x_start_norm, float x_end_norm, float rounding);
-    IMGUI_API void          RenderRectFilledWithHole(ImDrawList* draw_list, ImRect outer, ImRect inner, ImU32 col, float rounding);
-
-#ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
-    // [1.71: 2019/06/07: Updating prototypes of some of the internal functions. Leaving those for reference for a short while]
-    inline void RenderArrow(ImVec2 pos, ImGuiDir dir, float scale=1.0f) { ImGuiWindow* window = GetCurrentWindow(); RenderArrow(window->DrawList, pos, GetColorU32(ImGuiCol_Text), dir, scale); }
-    inline void RenderBullet(ImVec2 pos)                                { ImGuiWindow* window = GetCurrentWindow(); RenderBullet(window->DrawList, pos, GetColorU32(ImGuiCol_Text)); }
-#endif
+    IMGUI_API void          RenderRectFilledWithHole(ImDrawList* draw_list, const ImRect& outer, const ImRect& inner, ImU32 col, float rounding);
 
     // Widgets
     IMGUI_API void          TextEx(const char* text, const char* text_end = NULL, ImGuiTextFlags flags = 0);
