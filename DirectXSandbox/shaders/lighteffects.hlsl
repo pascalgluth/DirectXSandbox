@@ -39,9 +39,13 @@ namespace LightFX
         outDiffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
         outSpecular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
+        float distanceToLight = distance(inPointLight.position, pixelWorldPos);
+
+        if (distanceToLight > inPointLight.range)
+            return;
+
         float3 vectorToLight = normalize(inPointLight.position - pixelWorldPos);
         float diffuseFactor = max(dot(vectorToLight, normal), 0);
-        float distanceToLight = distance(inPointLight.position, pixelWorldPos);
         //float diffuseAttenuation = 1.f / (inPointLight.attenuation.x + inPointLight.attenuation.y * distanceToLight + inPointLight.attenuation.z * pow(distanceToLight, 2));
         diffuseFactor = diffuseFactor / (distanceToLight * inPointLight.attenuation.x);
         outDiffuse = inPointLight.diffuse * diffuseFactor;

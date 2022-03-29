@@ -43,7 +43,7 @@ protected:
 	void UpdateMatrix() override;
 
 	bool m_loaded = false;
-	std::future<void> m_loadModelTask;
+	std::future<bool> m_loadModelTask;
 	std::future<void> m_loadTextureTask;
 
 	std::string m_modelFile;

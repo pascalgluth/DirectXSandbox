@@ -32,10 +32,12 @@ bool VisibleGameObject::InitAsync(const std::string& model, ID3D11Device* device
 
 	AreObjectsLoading = true;
 	
-	m_loadModelTask = std::async(std::launch::async, [&]()
+	/*m_loadModelTask = std::async(std::launch::async, [&]()
 	{
 		LoadModel(model);
-	});
+	});*/
+
+	m_loadModelTask = std::async(std::launch::async, &VisibleGameObject::LoadModel, this, model);
 	
 	if (!m_objectCBuffer.Init(device, deviceContext))
 	{

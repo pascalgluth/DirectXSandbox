@@ -113,9 +113,9 @@ void Graphics::RenderFrame(ObjectManager* pObjectManager)
 
     m_rigidBodyObject.Render();
 
-    m_ambientLight.Render();
-    m_spotLight.Render();
-    m_pointLight.Render();
+    //m_ambientLight.Render();
+    //m_spotLight.Render();
+    //m_pointLight.Render();
 
 
     Gui::Render();
@@ -302,7 +302,7 @@ bool Graphics::SetupScene()
     HRESULT hr;
 
     m_physicsWorld = m_physicsCommon.createPhysicsWorld();
-    
+
     m_camera.SetPosition(0.f, 100.f, -2.f);
     m_camera.SetProjectionValues(90.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 100000.0f);
 
