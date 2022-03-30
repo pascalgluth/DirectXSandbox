@@ -22,11 +22,12 @@ Graphics::~Graphics()
     m_rasterizerState->Release();
 }
 
-void Graphics::Initialize(HWND hWnd, int width, int height)
+void Graphics::Initialize(HWND hWnd, SDL_Window* sdlWindow, int width, int height)
 {
     LOG_INFO("Initializing graphics...");
 
     m_hwnd = hWnd;
+    m_sdlWindow = sdlWindow;
     m_width = width;
     m_height = height;
 
@@ -36,7 +37,7 @@ void Graphics::Initialize(HWND hWnd, int width, int height)
 
     if (!SetupScene()) exit(-1);
 
-    Gui::Setup(hWnd, m_device, m_deviceContext);
+    Gui::Setup(m_sdlWindow, m_device, m_deviceContext);
 }
 
 void Graphics::UpdateScene(float dt)
@@ -267,7 +268,7 @@ void Graphics::Resize(int width, int height)
     m_camera.SetProjectionValues(90.0f, static_cast<float>(m_width) / static_cast<float>(m_height), 0.1f, 1000000.f);
 
     LOG_INFO("Intializing ImGui...");
-    Gui::Setup(m_hwnd, m_device, m_deviceContext);
+    Gui::Setup(m_sdlWindow, m_device, m_deviceContext);
 
 
     LOG_INFO("Resize complete.");

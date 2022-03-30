@@ -14,7 +14,7 @@ namespace Engine
         {}
     };
 
-    void Initialize(HWND _hWnd, int width, int height);
+    void Initialize(HWND _hWnd, SDL_Window* sdlWindow, int width, int height);
     void QueueResize(int width, int height);
     void Shutdown();
     void Update();

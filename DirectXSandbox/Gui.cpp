@@ -6,7 +6,7 @@
 #include "Logger.h"
 #include "ObjectManager.h"
 #include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_win32.h"
+#include "ImGui/imgui_impl_sdl.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imfilebrowser.h"
 
@@ -32,13 +32,13 @@ struct LogMessage
 
 std::vector<LogMessage> logMessages;
 
-void Gui::Setup(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
+void Gui::Setup(SDL_Window* sdlWindow, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\verdana.ttf", 25.f);
-    ImGui_ImplWin32_Init(hWnd);
+    ImGui_ImplSDL2_InitForD3D(sdlWindow);
     ImGui_ImplDX11_Init(device, deviceContext);
     ImGui::StyleColorsLight();
     ImGui::GetStyle().ScaleAllSizes(2);
@@ -66,7 +66,7 @@ void Gui::Setup(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* deviceCont
 void Gui::Shutdown()
 {
     ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 }
 
@@ -86,7 +86,7 @@ void Gui::Render()
 	static int pos = 0;
 
     ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
     ImGui::BeginMainMenuBar();

@@ -29,7 +29,7 @@ class Graphics
 {
 public:
     ~Graphics();
-    void Initialize(HWND hWnd, int width, int height);
+    void Initialize(HWND hWnd, struct SDL_Window* sdlWindow, int width, int height);
     void Resize(int width, int height);
     void UpdateScene(float dt);
     void RenderFrame(class ObjectManager* pObjectManager);
@@ -45,6 +45,7 @@ public:
     
 private:
     HWND m_hwnd;
+    SDL_Window* m_sdlWindow;
     int m_width;
     int m_height;
     bool m_vsync = false;

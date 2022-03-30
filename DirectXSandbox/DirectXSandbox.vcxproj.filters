@@ -87,6 +87,18 @@
     <ClInclude Include="RigidBodyObject.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="DirectoryHelperMacros.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectManager.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="SerializedTypes.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectXSandbox.cpp">
@@ -153,6 +165,12 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="RigidBodyObject.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectManager.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

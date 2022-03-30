@@ -23,7 +23,7 @@ namespace Engine
 
     GameplayStatics::Sound* mySound;
     
-    void Initialize(HWND _hWnd, int width, int height)
+    void Initialize(HWND _hWnd, SDL_Window* sdlWindow, int width, int height)
     {
         resizeQueued = false;
         hWnd = _hWnd;
@@ -33,7 +33,7 @@ namespace Engine
         mouse->SetWindow(hWnd);
 
         gfx = new Graphics();
-        gfx->Initialize(hWnd, width, height);
+        gfx->Initialize(hWnd, sdlWindow, width, height);
 
         NewScene();
 

@@ -1,171 +1,93 @@
-// DirectXSandbox.cpp : Definiert den Einstiegspunkt für die Anwendung.
-//
-
-#include <Windows.h>
+#include <SDL/SDL.h>
+#include <SDL/SDL_syswm.h>
 #include <string>
+
 #include <Keyboard.h>
 #include <Mouse.h>
 
 #include "Engine.h"
+#include "ImGui/imgui_impl_sdl.h"
 
-HINSTANCE hInst;
+SDL_Window* window;
 HWND hWnd;
-std::wstring wideTitle = L"DirectX Sandbox";
-std::wstring wideWindowClass = L"MyWindowClass";
+std::string windowTitle = "DirectX Sandbox";
 int width = 1920;
 int height = 1080;
 
-void RegisterWindowClass(HINSTANCE hInstance);
-BOOL InitWindow(HINSTANCE, int);
-void ResizeWindow();
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-bool ProcessMessages();
+void ProcessWMMsg(UINT msg, LPARAM lParam, WPARAM wParam);
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                      _In_opt_ HINSTANCE hPrevInstance,
-                      _In_ LPWSTR    lpCmdLine,
-                      _In_ int       nCmdShow)
+int main(int argv, char** args)
 {
-    hInst = hInstance;
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
+    window = SDL_CreateWindow(windowTitle.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+    SDL_SetWindowResizable(window, SDL_TRUE);
 
-    RegisterWindowClass(hInstance);
+    int realWidth, realHeight;
+    SDL_GetWindowSize(window, &realWidth, &realHeight);
 
-    if (!InitWindow(hInstance, nCmdShow))
+    SDL_SysWMinfo sysWMInfo;
+    SDL_VERSION(&sysWMInfo.version);
+    SDL_GetWindowWMInfo(window, &sysWMInfo);
+    hWnd = sysWMInfo.info.win.window;
+
+    Engine::Initialize(hWnd, window, realWidth, realHeight);
+
+    
+    bool run = true;
+    while (run)
     {
-        return FALSE;
-    }
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
+        {
+            ImGui_ImplSDL2_ProcessEvent(&event);
 
-    Engine::Initialize(hWnd, width, height);
+            /*if (event.type == SDL_SYSWMEVENT)
+            {
+                ProcessWMMsg(event.syswm.msg->msg.win.msg,
+                             event.syswm.msg->msg.win.lParam,
+                             event.syswm.msg->msg.win.wParam);
+            }*/
+            
+            if (event.type == SDL_QUIT)
+                run = false;
 
-    while (ProcessMessages())
-    {
+            if (event.type == SDL_WINDOWEVENT)
+            {
+                if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+                {
+                    Engine::QueueResize(event.window.data1, event.window.data2);
+                }
+            }
+        }
+
         if (Engine::ResizeQueued())
         {
-            ResizeWindow();
+            Engine::WindowSize newsize = Engine::GetNewWindowSize();
+            SDL_SetWindowSize(window, newsize.width, newsize.height);
+            Engine::GFXResize();
+            Engine::SetResizeComplete();
         }
+
         Engine::Update();
         Engine::Render();
     }
 
     Engine::Shutdown();
 
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
     return 0;
 }
 
-bool ProcessMessages()
+void ProcessWMMsg(UINT msg, LPARAM lParam, WPARAM wParam)
 {
-    MSG msg{};
-
-    while (PeekMessage(&msg, hWnd, 0, 0, PM_REMOVE))
+    switch (msg)
     {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-
-    if (msg.message == WM_NULL)
-    {
-        if (!IsWindow(hWnd))
-        {
-            hWnd = NULL;
-            UnregisterClass(wideWindowClass.c_str(), hInst);
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void RegisterWindowClass(HINSTANCE hInstance)
-{
-    WNDCLASSEX wc;
-    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-    wc.lpfnWndProc = WndProc;
-    wc.cbClsExtra = 0;
-    wc.cbWndExtra = 0;
-    wc.hInstance = hInstance;
-    wc.hIcon = NULL;
-    wc.hIconSm = NULL;
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = NULL;
-    wc.lpszMenuName = NULL; 
-    wc.lpszClassName = wideWindowClass.c_str();
-    wc.cbSize = sizeof(WNDCLASSEX);
-    
-    RegisterClassEx(&wc);
-}
-
-BOOL InitWindow(HINSTANCE hInstance, int nCmdShow)
-{
-    hInst = hInstance;
-
-    int screenCenterX = GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2;
-    int screenCenterY = GetSystemMetrics(SM_CYSCREEN) / 2 - height / 2;
-
-    RECT wr;
-    wr.left = screenCenterX;
-    wr.top = screenCenterY;
-    wr.right = wr.left + width;
-    wr.bottom = wr.top + height;
-    AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE);
-
-    hWnd = CreateWindowEx(0, wideWindowClass.c_str(), wideTitle.c_str(),
-                                WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
-                                wr.left, wr.top,
-                                wr.right - wr.left, wr.bottom - wr.top,
-                                NULL, NULL, hInst, NULL);
-
-    if (!hWnd)
-    {
-      return FALSE;
-    }
-
-    ShowWindow(hWnd, nCmdShow);
-    SetForegroundWindow(hWnd);
-    UpdateWindow(hWnd);
-
-    return TRUE;
-}
-
-void ResizeWindow()
-{
-    Engine::WindowSize newSize = Engine::GetNewWindowSize();
-    width = newSize.width;
-    height = newSize.height;
-
-    int screenCenterX = GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2;
-    int screenCenterY = GetSystemMetrics(SM_CYSCREEN) / 2 - height / 2;
-
-    RECT wr;
-    wr.left = screenCenterX;
-    wr.top = screenCenterY;
-    wr.right = wr.left + width;
-    wr.bottom = wr.top + height;
-    AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE);
-
-    SetWindowPos(hWnd, 0, wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top, SWP_SHOWWINDOW | SWP_FRAMECHANGED);
-    Engine::GFXResize();
-
-    Engine::SetResizeComplete();
-}
-
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam)) return true;
-
-    static bool isResizing = false;
-    static bool isMinimized = false;
-
-    switch (message)
-    {
-    case WM_DESTROY:
-        DestroyWindow(hWnd);
-        break;
     case WM_ACTIVATE:
     case WM_ACTIVATEAPP:
-	    DirectX::Keyboard::ProcessMessage(message, wParam, lParam);
-        DirectX::Mouse::ProcessMessage(message, wParam, lParam);
+        DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
+        DirectX::Mouse::ProcessMessage(msg, wParam, lParam);
         break;
 
     case WM_SYSKEYDOWN:
@@ -173,13 +95,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             
         }
-        DirectX::Keyboard::ProcessMessage(message, wParam, lParam);
+        DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
         break;
 
     case WM_KEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
-	    DirectX::Keyboard::ProcessMessage(message, wParam, lParam);
+        DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
         break;
     case WM_INPUT:
     case WM_MOUSEMOVE:
@@ -193,10 +115,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_XBUTTONDOWN:
     case WM_XBUTTONUP:
     case WM_MOUSEHOVER:
-        DirectX::Mouse::ProcessMessage(message, wParam, lParam);
+        DirectX::Mouse::ProcessMessage(msg, wParam, lParam);
         break;
     default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        break;
     }
-    return 0;
 }
