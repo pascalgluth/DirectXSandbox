@@ -171,13 +171,13 @@ void Gui::Render()
     }
 
     if (showAmbientLight)
-    	LightGui::RenderAmbientLightGui(gfx->GetAmbientLight());
+    	LightGui::RenderAmbientLightGui();
 
 	if (showPointLight)
-		LightGui::RenderPointLightGui(gfx->GetPointLight());
+		LightGui::RenderPointLightGui();
 
 	if (showSpotLight)
-		LightGui::RenderSpotLightGui(gfx->GetSpotLight());
+		LightGui::RenderSpotLightGui();
 
 	if (showSceneManager)
 		RenderSceneManager();

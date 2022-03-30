@@ -105,9 +105,7 @@ void Graphics::RenderFrame(ObjectManager* pObjectManager)
     m_deviceContext->VSSetShader(m_sceneVertexShader.GetShader(), NULL, 0);
     m_deviceContext->PSSetShader(m_scenePixelShader.GetShader(), NULL, 0);
 
-    m_ambientLight.ApplyBuffer(0);
-    m_pointLight.ApplyBuffer(1);
-    //m_spotLight.ApplyBuffer(0);
+    Light::RenderLights(0);
 
     pObjectManager->Render();
 
@@ -312,21 +310,7 @@ bool Graphics::SetupScene()
         return false;
     }
 
-    m_ambientLight.Init(m_device, m_deviceContext);
-
-    /*m_ambientLight.GetCBuffer()->Data.color.x = 1.f;
-    m_ambientLight.GetCBuffer()->Data.color.y = 1.f;
-    m_ambientLight.GetCBuffer()->Data.color.z = 1.f;
-    m_ambientLight.GetCBuffer()->Data.strength = 1.f;*/
-
-    m_pointLight.Init(m_device, m_deviceContext);
-    
-    /*m_spotLight.Init(m_device, m_deviceContext);
-
-    m_spotLight.GetCBuffer()->Data.position = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
-    m_spotLight.GetCBuffer()->Data.direction = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
-    m_spotLight.GetCBuffer()->Data.strength = 10.f;
-    m_spotLight.GetCBuffer()->Data.spotLightDistance = 10000.f;*/
+    Light::Init(m_device, m_deviceContext);
     
     /*std::vector<float> vertices;
     std::vector<int> indices;

@@ -1,13 +1,9 @@
 #include "LightEffects.hlsl"
 
-cbuffer ambientLightBuffer : register(b0)
+cbuffer lightBuffer : register(b0)
 {
-    LightFX::AmbientLight ambientLight;
-}
-
-cbuffer pointLightBuffer : register(b1)
-{
-    LightFX::PointLight pointLight;
+    LightFX::AmbientLight ambientLight;     // 48 byte
+    LightFX::PointLight pointLight;         // 80 byte
 }
 
 struct PS_INPUT
@@ -29,29 +25,15 @@ float4 main(PS_INPUT input) : SV_TARGET
     float4 diffuseColor = diffTex.Sample(objectSampler, input.textureCoord);
     float4 specColor = specTex.Sample(objectSampler, input.textureCoord);
 
-    // Ambient Light
-	//float3 allLight = cAmbientLight.ambientLightcolor * cAmbientLight.ambientLightstrength;
-
     float4 diffuseLight = ambientLight.ambient;
     
     float4 a, d, s;
 
     LightFX::computePointLight(input.worldPosition, input.normal, input.eyePos, pointLight,
-         diffuseColor, specColor, a, d, s);
-
+                      a, d, s);
     diffuseLight += d;
     float4 specularLight = s;
-
-    /*float3 spotLightAmbient;
-    float3 spotLightDiffuse;
-    float3 spotLightSpec;
-    LightFX::computeSpotLight(input.worldPosition, input.normal, input.eyePos, cSpotLight,
-        spotLightAmbient, spotLightDiffuse, spotLightSpec);
     
-    allLight += spotLightAmbient;
-    allLight += spotLightDiffuse;
-    allLight += spotLightSpec; */
     float4 color = (diffuseColor * diffuseLight) + (specColor * specularLight);
-
     return color;
 }

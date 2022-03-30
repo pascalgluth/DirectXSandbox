@@ -2,26 +2,31 @@ namespace LightFX
 {
     struct AmbientLight
     {
-        float4 ambient;
-        float4 diffuse;
-        float4 specular;
+        float4 ambient;     // 16 byte
+        float4 diffuse;     // 16 byte
+        float4 specular;    // 16 byte
+        
+        // 48 byte
     };
 
     struct PointLight
     {
-        float4 ambient;
-        float4 diffuse;
-        float4 specular;
+        float4 ambient;     // 16 byte
+        float4 diffuse;     // 16 byte
+        float4 specular;    // 16 byte        
 
-        float3 position;
-        float range;
+        float3 position;    // 12 byte
+        float range;        // 4 byte
 
-        float3 attenuation;
-        float padding;
+        float3 attenuation; // 12 byte
+        float padding;      // 4 byte
+
+        // 80 byte
     };
 
     struct SpotLight
     {
+        // todo: spot light
         float3 spotLightPosition;
         float spotLightStrength;
         float3 spotLightDirection;
@@ -32,8 +37,7 @@ namespace LightFX
     };
 
     void computePointLight(float3 pixelWorldPos, float3 normal, float3 eyePos, PointLight inPointLight,
-        float4 inDiffuse, float4 inSpecular,
-        out float4 outAmbient, out float4 outDiffuse, out float4 outSpecular)
+                           out float4 outAmbient, out float4 outDiffuse, out float4 outSpecular)
     {
         outAmbient = float4(0.0f, 0.0f, 0.0f, 0.0f);
         outDiffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);

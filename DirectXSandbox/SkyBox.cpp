@@ -32,7 +32,9 @@ bool SkyBox::Init(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
     if (!m_pixelShader.Init(m_device, L"../bin/skyboxps.cso"))
         return false;
 
-    hr = CreateDDSTextureFromFile(m_device, L"../bin/Content/Textures/skymap1.dds", NULL, &m_cubeMap);
+    std::string path = FILE_TEXTURE("skymap1.dds");
+    std::wstring wpath(path.begin(), path.end());
+    hr = CreateDDSTextureFromFile(m_device, wpath.c_str(), NULL, &m_cubeMap);
     if (FAILED(hr)) return false;
 
     CreateSphere(10, 10);
@@ -157,6 +159,7 @@ void SkyBox::CreateSphere(int latlines, int longlines)
     indices[k+1] = (numSphereVertices-1)-longlines;
     indices[k+2] = numSphereVertices-2;
 
+    std::vector<Texture> notextures;
 
-    //m_meshes.emplace_back(new Mesh(m_device, m_deviceContext, vertices, indices, XMMatrixIdentity()));
+    m_meshes.emplace_back(new Mesh(m_device, m_deviceContext, vertices, indices, notextures, XMMatrixIdentity()));
 }

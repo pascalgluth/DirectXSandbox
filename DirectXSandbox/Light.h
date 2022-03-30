@@ -12,19 +12,19 @@
 
 namespace LightCBuffer
 {
-    struct LightCBuffer
+    struct PSAmbientLight
     {
         DirectX::XMFLOAT4 ambient = {0.3f, 0.3f, 0.3f, 1.f};
         DirectX::XMFLOAT4 diffuse = {0.7f, 0.7f, 0.7f, 1.f};
         DirectX::XMFLOAT4 specular = {0.7f, 0.7f, 0.7f, 1.f};
     };
 
-    struct PSAmbientLight : LightCBuffer
+    struct PSPointLight
     {
-    };
-
-    struct PSPointLight : LightCBuffer
-    {
+        DirectX::XMFLOAT4 ambient = {0.3f, 0.3f, 0.3f, 1.f};
+        DirectX::XMFLOAT4 diffuse = {0.7f, 0.7f, 0.7f, 1.f};
+        DirectX::XMFLOAT4 specular = {0.7f, 0.7f, 0.7f, 1.f};
+        
         DirectX::XMFLOAT3 position = {0.f, 0.f, 0.f};
         float range = 10000.f;
 
@@ -32,7 +32,7 @@ namespace LightCBuffer
         float padding;
     };
 
-    struct PSSpotLight : LightCBuffer
+    struct PSSpotLight
     {
         DirectX::XMFLOAT3 position;
         float range;
@@ -45,7 +45,16 @@ namespace LightCBuffer
     };
 }
 
-template <typename LightType>
+namespace Light
+{
+    bool Init(ID3D11Device* _device, ID3D11DeviceContext* _deviceContext);
+    void RenderLights(UINT cbslot);
+
+    LightCBuffer::PSAmbientLight* GetAmbientLight();
+    LightCBuffer::PSPointLight* GetPointLight();
+}
+
+/*template <typename LightType>
 class Light : public VisibleGameObject
 {
 public:
@@ -91,42 +100,36 @@ private:
     ID3D11Device* m_device = nullptr;
     ID3D11DeviceContext* m_deviceContext = nullptr;
 
-    ConstantBuffer<LightType> m_lightCBuffer;
+    static ConstantBuffer<LightCBuffer> m_lightCBuffer;
     
-};
+};*/
 
 namespace LightGui
 {
-    inline void RenderAmbientLightGui(Light<LightCBuffer::PSAmbientLight>* pLight)
+    inline void RenderAmbientLightGui()
     {
         ImGui::Begin("Ambient Light");
         {
-            if (pLight)
-            {
-                ImGui::DragFloat4("Ambient", &pLight->GetCBuffer()->Data.ambient.x, 0.01f);
-            }
+            ImGui::DragFloat4("Ambient", &Light::GetAmbientLight()->ambient.x, 0.01f);
         }
         ImGui::End();
     }
 
-    inline void RenderPointLightGui(Light<LightCBuffer::PSPointLight>* pLight)
+    inline void RenderPointLightGui()
     {
         ImGui::Begin("Point Light");
         {
-            if (pLight)
-            {
-                ImGui::DragFloat4("Ambient", &pLight->GetCBuffer()->Data.ambient.x, 0.01f);
-                ImGui::DragFloat4("Diffuse", &pLight->GetCBuffer()->Data.diffuse.x, 0.01f);
-                ImGui::DragFloat4("Specular", &pLight->GetCBuffer()->Data.specular.x, 0.01f);
-                ImGui::DragFloat3("Position", &pLight->GetCBuffer()->Data.position.x, 0.1f);
-                ImGui::DragFloat("Range", &pLight->GetCBuffer()->Data.range, 0.1f);
-                ImGui::DragFloat3("Attenuation", &pLight->GetCBuffer()->Data.attenuation.x, 0.001f);
-            }
+            ImGui::DragFloat4("Ambient", &Light::GetPointLight()->ambient.x, 0.01f);
+            ImGui::DragFloat4("Diffuse", &Light::GetPointLight()->diffuse.x, 0.01f);
+            ImGui::DragFloat4("Specular", &Light::GetPointLight()->specular.x, 0.01f);
+            ImGui::DragFloat3("Position", &Light::GetPointLight()->position.x, 0.1f);
+            ImGui::DragFloat("Range", &Light::GetPointLight()->range, 0.1f);
+            ImGui::DragFloat3("Attenuation", &Light::GetPointLight()->attenuation.x, 0.001f);
         }
         ImGui::End();
     }
 
-    inline void RenderSpotLightGui(Light<LightCBuffer::PSSpotLight>* pLight)
+    inline void RenderSpotLightGui()
     {
         /*ImGui::Begin("Spot Light");
         {

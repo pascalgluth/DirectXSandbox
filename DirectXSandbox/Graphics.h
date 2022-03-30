@@ -40,10 +40,6 @@ public:
     UINT GetResWidth() const { return m_width; }
     UINT GetResHeight() const { return m_height; }
 
-    Light<LightCBuffer::PSAmbientLight>* GetAmbientLight() { return &m_ambientLight; }
-    Light<LightCBuffer::PSPointLight>* GetPointLight() { return &m_pointLight; }
-    Light<LightCBuffer::PSSpotLight>* GetSpotLight() { return &m_spotLight; }
-
     ID3D11Device* GetDevice() { return m_device; }
     ID3D11DeviceContext* GetDeviceContext() { return m_deviceContext; }
     
@@ -71,9 +67,6 @@ private:
     VertexShader m_sceneVertexShader;
     PixelShader m_scenePixelShader;
     ConstantBuffer<GlobalCBuffer> m_globalCBuffer;
-    Light<LightCBuffer::PSAmbientLight> m_ambientLight;
-    Light<LightCBuffer::PSPointLight> m_pointLight;
-    Light<LightCBuffer::PSSpotLight> m_spotLight;
     ID3D11SamplerState* m_samplerState;
     SkyBox m_skyBox;
     // Physics
