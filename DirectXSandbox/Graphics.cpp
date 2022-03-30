@@ -7,6 +7,7 @@
 #include "Gui.h"
 #include "ObjectManager.h"
 #include "DirectoryHelperMacros.h"
+#include "Input/Keyboard.h"
 
 Graphics::~Graphics()
 {
@@ -38,6 +39,31 @@ void Graphics::Initialize(HWND hWnd, SDL_Window* sdlWindow, int width, int heigh
     if (!SetupScene()) exit(-1);
 
     Gui::Setup(m_sdlWindow, m_device, m_deviceContext);
+
+    std::function lmb = [&]()
+    {
+        LOG_INFO("W pressed");
+        m_camera.AdjustPosition(m_camera.GetForwardVector() * 2.f);
+    };
+    ::Keyboard::AddActionBinding("W", KE_PRESSED, lmb);
+    
+    std::function lmb2 = [&]()
+    {
+        m_camera.AdjustPosition(m_camera.GetLeftVector() * 2.f);
+    };
+    ::Keyboard::AddActionBinding("A", KE_PRESSED, lmb2);
+    
+    std::function lmb3 = [&]()
+    {
+        m_camera.AdjustPosition(m_camera.GetBackwardVector() * 2.f);
+    };
+    ::Keyboard::AddActionBinding("S", KE_PRESSED, lmb3);
+    
+    std::function lmb4 = [&]()
+    {
+        m_camera.AdjustPosition(m_camera.GetRightVector() * 2.f);
+    };
+    ::Keyboard::AddActionBinding("D", KE_PRESSED, lmb4);
 }
 
 void Graphics::UpdateScene(float dt)
@@ -54,15 +80,14 @@ void Graphics::UpdateScene(float dt)
     {
         DirectX::Mouse::Get().SetMode(Mouse::MODE_ABSOLUTE);
     }
-
     float speed = 0.1f;
 
-    if (kb.LeftControl) speed *= 10;
+    if (::Keyboard::IsKeyDown("Left Shift")) speed *= 10;
 
-    if (kb.A) m_camera.AdjustPosition(m_camera.GetLeftVector() * speed);
-    if (kb.D) m_camera.AdjustPosition(m_camera.GetRightVector() * speed);
-    if (kb.W) m_camera.AdjustPosition(m_camera.GetForwardVector() * speed);
-    if (kb.S) m_camera.AdjustPosition(m_camera.GetBackwardVector() * speed);
+    if (::Keyboard::IsKeyDown("W")) m_camera.AdjustPosition(m_camera.GetForwardVector() * speed);
+    if (::Keyboard::IsKeyDown("A")) m_camera.AdjustPosition(m_camera.GetLeftVector() * speed);
+    if (::Keyboard::IsKeyDown("S")) m_camera.AdjustPosition(m_camera.GetBackwardVector() * speed);
+    if (::Keyboard::IsKeyDown("D")) m_camera.AdjustPosition(m_camera.GetRightVector() * speed);
     if (kb.Space) m_camera.AdjustPosition(0.f, speed, 0.f);
     if (kb.LeftShift) m_camera.AdjustPosition(0.f, -speed, 0.f);
 

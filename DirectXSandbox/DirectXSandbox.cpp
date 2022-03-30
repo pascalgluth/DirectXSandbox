@@ -2,11 +2,11 @@
 #include <SDL/SDL_syswm.h>
 #include <string>
 
-#include <Keyboard.h>
 #include <Mouse.h>
 
 #include "Engine.h"
 #include "ImGui/imgui_impl_sdl.h"
+#include "Input/Keyboard.h"
 
 SDL_Window* window;
 HWND hWnd;
@@ -31,7 +31,6 @@ int main(int argv, char** args)
     hWnd = sysWMInfo.info.win.window;
 
     Engine::Initialize(hWnd, window, realWidth, realHeight);
-
     
     bool run = true;
     while (run)
@@ -50,6 +49,24 @@ int main(int argv, char** args)
             
             if (event.type == SDL_QUIT)
                 run = false;
+
+            if (event.type == SDL_KEYDOWN)
+            {
+                bool repeat = false;
+                if (event.key.repeat != 0)
+                    repeat = true;
+
+                Keyboard::OnKeyDown(SDL_GetKeyName(event.key.keysym.sym), repeat);
+            }
+
+            if (event.type == SDL_KEYUP)
+            {
+                bool repeat = false;
+                if (event.key.repeat != 0)
+                    repeat = true;
+
+                Keyboard::OnKeyUp(SDL_GetKeyName(event.key.keysym.sym), repeat);
+            }
 
             if (event.type == SDL_WINDOWEVENT)
             {
@@ -78,46 +95,4 @@ int main(int argv, char** args)
     SDL_Quit();
 
     return 0;
-}
-
-void ProcessWMMsg(UINT msg, LPARAM lParam, WPARAM wParam)
-{
-    switch (msg)
-    {
-    case WM_ACTIVATE:
-    case WM_ACTIVATEAPP:
-        DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
-        DirectX::Mouse::ProcessMessage(msg, wParam, lParam);
-        break;
-
-    case WM_SYSKEYDOWN:
-        if (wParam == VK_RETURN && (lParam & 0x60000000) == 0x20000000)
-        {
-            
-        }
-        DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
-        break;
-
-    case WM_KEYDOWN:
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-        DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
-        break;
-    case WM_INPUT:
-    case WM_MOUSEMOVE:
-    case WM_LBUTTONDOWN:
-    case WM_LBUTTONUP:
-    case WM_RBUTTONDOWN:
-    case WM_RBUTTONUP:
-    case WM_MBUTTONDOWN:
-    case WM_MBUTTONUP:
-    case WM_MOUSEWHEEL:
-    case WM_XBUTTONDOWN:
-    case WM_XBUTTONUP:
-    case WM_MOUSEHOVER:
-        DirectX::Mouse::ProcessMessage(msg, wParam, lParam);
-        break;
-    default:
-        break;
-    }
 }
