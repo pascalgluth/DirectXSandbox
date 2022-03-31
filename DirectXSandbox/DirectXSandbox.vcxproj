@@ -122,6 +122,7 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
     </FxCompile>
     <ClCompile Include="SkyBox.cpp" />
+    <ClCompile Include="Stencil.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="VisibleGameObject.cpp" />
     <FxCompile Include="shaders\pixelshader.hlsl">
@@ -168,6 +169,7 @@
     <ClInclude Include="SerializedTypes.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SkyBox.h" />
+    <ClInclude Include="Stencil.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="VisibleGameObject.h" />
   </ItemGroup>

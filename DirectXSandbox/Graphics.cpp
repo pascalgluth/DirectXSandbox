@@ -95,7 +95,7 @@ void Graphics::RenderFrame(ObjectManager* pObjectManager)
     if (!m_globalCBuffer.ApplyChanges()) return;
     m_deviceContext->VSSetConstantBuffers(0, 1, m_globalCBuffer.GetBuffer());
 
-    m_skyBox.Render();
+    //m_skyBox.Render();
 
     m_deviceContext->IASetInputLayout(m_sceneVertexShader.GetInputLayout());
     m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -286,6 +286,9 @@ bool Graphics::SetupShaders()
         return false;
 
     if (!m_scenePixelShader.Init(m_device, L"../bin/pixelshader.cso"))
+        return false;
+
+    if (!m_solidColorPS.Init(m_device, L"../bin/solidPS.cso"))
         return false;
     
     return true;

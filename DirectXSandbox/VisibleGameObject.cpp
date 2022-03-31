@@ -2,6 +2,7 @@
 #include <DirectXMath.h>
 #include <WICTextureLoader.h>
 
+#include "Engine.h"
 #include "Graphics.h"
 #include "Logger.h"
 
@@ -11,6 +12,9 @@ bool VisibleGameObject::Init(const std::string& model, ID3D11Device* device, ID3
 {
 	m_device = device;
 	m_deviceContext = deviceContext;
+
+	m_stencilMask = new Stencil(device, deviceContext, Stencil::MASK);
+	m_stencilWrite = new Stencil(device, deviceContext, Stencil::WRITE);
 
 	LoadModel(model);
 
@@ -36,6 +40,9 @@ bool VisibleGameObject::InitAsync(const std::string& model, ID3D11Device* device
 	{
 		LoadModel(model);
 	});*/
+
+	m_stencilMask = new Stencil(device, deviceContext, Stencil::MASK);
+	m_stencilWrite = new Stencil(device, deviceContext, Stencil::WRITE);
 
 	m_loadModelTask = std::async(std::launch::async, &VisibleGameObject::LoadModel, this, model);
 	
@@ -77,14 +84,35 @@ VisibleGameObject::~VisibleGameObject()
 void VisibleGameObject::Render()
 {
 	if (!m_loaded) return;
-	
+
 	m_deviceContext->VSSetConstantBuffers(1, 1, m_objectCBuffer.GetBuffer());
 
-	for (int i = 0; i < m_meshes.size(); ++i)
+	// Pass 1: Drawing and masking the normal version
 	{
-		m_objectCBuffer.Data.worldMatrix = m_meshes[i]->GetTransform() * m_worldMatrix;
-		m_objectCBuffer.ApplyChanges();
-		m_meshes[i]->Render();
+		SetScale(1.f, 1.f, 1.f);
+		m_stencilWrite->Bind();
+		m_deviceContext->PSSetShader(Engine::GetGFX()->m_scenePixelShader.GetShader(), NULL, 0);
+
+		for (int i = 0; i < m_meshes.size(); ++i)
+		{
+			m_objectCBuffer.Data.worldMatrix = m_meshes[i]->GetTransform() * m_worldMatrix;
+			m_objectCBuffer.ApplyChanges();
+			m_meshes[i]->Render();
+		}
+	}
+
+	// Pass 2: Drawing the red outline with the mask
+	{
+		SetScale(1.03f, 1.03f, 1.03f);
+		m_stencilMask->Bind();
+		m_deviceContext->PSSetShader(Engine::GetGFX()->m_solidColorPS.GetShader(), NULL, 0);
+	
+		for (int i = 0; i < m_meshes.size(); ++i)
+		{
+			m_objectCBuffer.Data.worldMatrix = m_meshes[i]->GetTransform() * m_worldMatrix;
+			m_objectCBuffer.ApplyChanges();
+			m_meshes[i]->Render();
+		}
 	}
 }
 

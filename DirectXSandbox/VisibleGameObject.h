@@ -12,6 +12,7 @@
 #include "ConstantBuffer.h"
 #include "GameObject.h"
 #include "Mesh.h"
+#include "Stencil.h"
 
 class VisibleGameObject : public GameObject
 {
@@ -56,5 +57,9 @@ protected:
 	std::vector<ID3D11ShaderResourceView*> m_textures;
 	DirectX::XMMATRIX m_worldMatrix = DirectX::XMMatrixIdentity();
 	ConstantBuffer<ObjectCBuffer> m_objectCBuffer;
+
+	bool m_outlinePass = false;
+	Stencil* m_stencilMask = nullptr;
+	Stencil* m_stencilWrite = nullptr;
 
 };

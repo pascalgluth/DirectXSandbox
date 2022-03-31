@@ -28,6 +28,8 @@ struct Vertex
 class Graphics
 {
 public:
+    friend class VisibleGameObject;
+    
     ~Graphics();
     void Initialize(HWND hWnd, int width, int height);
     void Resize(int width, int height);
@@ -66,6 +68,7 @@ private:
     // Scene
     VertexShader m_sceneVertexShader;
     PixelShader m_scenePixelShader;
+    PixelShader m_solidColorPS;
     ConstantBuffer<GlobalCBuffer> m_globalCBuffer;
     ID3D11SamplerState* m_samplerState;
     SkyBox m_skyBox;
