@@ -3,7 +3,6 @@
 #include <Windows.h>
 #include <dxgi.h>
 #include <DirectXMath.h>
-#include <Mouse.h>
 #include <Audio.h>
 
 #include "Camera.h"
@@ -81,8 +80,6 @@ private:
     Collider* m_worldCollider = nullptr;
     BoxShape* m_boxCollider = nullptr;
 
-    DirectX::Mouse::ButtonStateTracker m_tracker;
-    
     Camera3D m_camera3d;
     Camera m_camera;
     

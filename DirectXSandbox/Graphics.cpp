@@ -1,13 +1,12 @@
 ﻿#include "Graphics.h"
 
-#include <Mouse.h>
-
 #include "Keyboard.h"
 #include "Logger.h"
 #include "Gui.h"
 #include "ObjectManager.h"
 #include "DirectoryHelperMacros.h"
 #include "Input/Keyboard.h"
+#include "Input/Mouse.h"
 
 Graphics::~Graphics()
 {
@@ -40,46 +39,15 @@ void Graphics::Initialize(HWND hWnd, SDL_Window* sdlWindow, int width, int heigh
 
     Gui::Setup(m_sdlWindow, m_device, m_deviceContext);
 
-    std::function lmb = [&]()
+    std::function mouseMove = [&](float xdiff, float ydiff)
     {
-        LOG_INFO("W pressed");
-        m_camera.AdjustPosition(m_camera.GetForwardVector() * 2.f);
+        m_camera.AdjustRotation(ydiff * 0.005f, xdiff * 0.005f, 0.f);
     };
-    ::Keyboard::AddActionBinding("W", KE_PRESSED, lmb);
-    
-    std::function lmb2 = [&]()
-    {
-        m_camera.AdjustPosition(m_camera.GetLeftVector() * 2.f);
-    };
-    ::Keyboard::AddActionBinding("A", KE_PRESSED, lmb2);
-    
-    std::function lmb3 = [&]()
-    {
-        m_camera.AdjustPosition(m_camera.GetBackwardVector() * 2.f);
-    };
-    ::Keyboard::AddActionBinding("S", KE_PRESSED, lmb3);
-    
-    std::function lmb4 = [&]()
-    {
-        m_camera.AdjustPosition(m_camera.GetRightVector() * 2.f);
-    };
-    ::Keyboard::AddActionBinding("D", KE_PRESSED, lmb4);
+    Mouse::AddRawMovementBinding(mouseMove);
 }
 
 void Graphics::UpdateScene(float dt)
 {
-    auto kb = DirectX::Keyboard::Get().GetState();
-    auto mouse = DirectX::Mouse::Get().GetState();
-    m_tracker.Update(mouse);
-
-    if (m_tracker.rightButton == Mouse::ButtonStateTracker::PRESSED)
-    {
-        DirectX::Mouse::Get().SetMode(Mouse::MODE_RELATIVE);
-    }
-    if (m_tracker.rightButton == Mouse::ButtonStateTracker::RELEASED)
-    {
-        DirectX::Mouse::Get().SetMode(Mouse::MODE_ABSOLUTE);
-    }
     float speed = 0.1f;
 
     if (::Keyboard::IsKeyDown("Left Shift")) speed *= 10;
@@ -88,13 +56,10 @@ void Graphics::UpdateScene(float dt)
     if (::Keyboard::IsKeyDown("A")) m_camera.AdjustPosition(m_camera.GetLeftVector() * speed);
     if (::Keyboard::IsKeyDown("S")) m_camera.AdjustPosition(m_camera.GetBackwardVector() * speed);
     if (::Keyboard::IsKeyDown("D")) m_camera.AdjustPosition(m_camera.GetRightVector() * speed);
-    if (kb.Space) m_camera.AdjustPosition(0.f, speed, 0.f);
-    if (kb.LeftShift) m_camera.AdjustPosition(0.f, -speed, 0.f);
+    if (::Keyboard::IsKeyDown("Space")) m_camera.AdjustPosition(0.f, speed, 0.f);
+    if (::Keyboard::IsKeyDown("Left Ctrl")) m_camera.AdjustPosition(0.f, -speed, 0.f);
 
-    if (kb.C) m_rigidBodyObject.SetPosition(m_camera.GetPositionFloat3());
-
-    if (mouse.positionMode == Mouse::MODE_RELATIVE)
-		m_camera.AdjustRotation((float)mouse.y * 0.005f, (float)mouse.x * 0.005f, 0.f);
+    //if (kb.C) m_rigidBodyObject.SetPosition(m_camera.GetPositionFloat3());
 
     m_skyBox.SetPosition(m_camera.GetPositionFloat3());
 
@@ -103,7 +68,7 @@ void Graphics::UpdateScene(float dt)
 
     if (m_physicsWorld->testOverlap(m_worldCollider->getBody(), m_rigidBodyObject.GetCollider()->getBody()))
     {
-        LOG_INFO("Hello we collide");
+        LOG_INFO("collision");
     }
 }
 

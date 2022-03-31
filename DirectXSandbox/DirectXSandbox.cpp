@@ -2,11 +2,10 @@
 #include <SDL/SDL_syswm.h>
 #include <string>
 
-#include <Mouse.h>
-
 #include "Engine.h"
 #include "ImGui/imgui_impl_sdl.h"
 #include "Input/Keyboard.h"
+#include "Input/Mouse.h"
 
 SDL_Window* window;
 HWND hWnd;
@@ -49,6 +48,11 @@ int main(int argv, char** args)
             
             if (event.type == SDL_QUIT)
                 run = false;
+
+            if (event.type == SDL_MOUSEMOTION)
+            {
+                Mouse::OnRawMove(event.motion.xrel, event.motion.yrel, event.motion.x, event.motion.y);
+            }
 
             if (event.type == SDL_KEYDOWN)
             {

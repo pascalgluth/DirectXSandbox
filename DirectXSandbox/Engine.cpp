@@ -28,10 +28,6 @@ namespace Engine
         resizeQueued = false;
         hWnd = _hWnd;
 
-        keyboard = std::make_unique<DirectX::Keyboard>();
-        mouse = std::make_unique<DirectX::Mouse>();
-        mouse->SetWindow(hWnd);
-
         gfx = new Graphics();
         gfx->Initialize(hWnd, sdlWindow, width, height);
 
