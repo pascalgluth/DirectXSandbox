@@ -39,6 +39,7 @@ public:
 	bool IsLoading() const { return m_loaded; }
 	const std::string& GetModelFile() const { return m_modelFile; }
 	const std::string& GetTextureFile() const { return m_textureFile; }
+	void SetDrawOutline(bool drawOutline) { m_drawOutline = drawOutline; }
 
 protected:
 	void UpdateMatrix() override;
@@ -58,7 +59,7 @@ protected:
 	DirectX::XMMATRIX m_worldMatrix = DirectX::XMMatrixIdentity();
 	ConstantBuffer<ObjectCBuffer> m_objectCBuffer;
 
-	bool m_outlinePass = false;
+	bool m_drawOutline = false;
 	Stencil* m_stencilMask = nullptr;
 	Stencil* m_stencilWrite = nullptr;
 

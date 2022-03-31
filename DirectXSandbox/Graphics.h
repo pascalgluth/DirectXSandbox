@@ -44,6 +44,8 @@ public:
 
     ID3D11Device* GetDevice() { return m_device; }
     ID3D11DeviceContext* GetDeviceContext() { return m_deviceContext; }
+
+    ID3D11DepthStencilState* GetDefaultDepthStencil() { return m_depthStencilState; }
     
 private:
     HWND m_hwnd;

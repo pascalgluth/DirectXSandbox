@@ -70,7 +70,6 @@ void Gui::Shutdown()
     ImGui::DestroyContext();
 }
 
-
 void Gui::Render()
 {
     static bool showWindowControls = false;
@@ -271,8 +270,16 @@ void Gui::RenderSceneManager()
 
 			if (ImGui::Selectable(itr->first.c_str(), isSelected))
 			{
+				if (selectedObjectPtr)
+				{
+					if (VisibleGameObject* currentVisObj = dynamic_cast<VisibleGameObject*>(selectedObjectPtr))
+						currentVisObj->SetDrawOutline(false);
+				}
+				
 				selectedObject = itr->first;
 				selectedObjectPtr = itr->second;
+				if (VisibleGameObject* currentVisObj = dynamic_cast<VisibleGameObject*>(selectedObjectPtr))
+					currentVisObj->SetDrawOutline(true);
 			}
 
 			ImGui::SetItemDefaultFocus();

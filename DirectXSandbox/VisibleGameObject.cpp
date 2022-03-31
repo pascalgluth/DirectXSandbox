@@ -84,12 +84,13 @@ VisibleGameObject::~VisibleGameObject()
 void VisibleGameObject::Render()
 {
 	if (!m_loaded) return;
-
+	
+	m_deviceContext->OMSetDepthStencilState(Engine::GetGFX()->GetDefaultDepthStencil(), 0xFF);
 	m_deviceContext->VSSetConstantBuffers(1, 1, m_objectCBuffer.GetBuffer());
 	
 	// Pass 1: Drawing and masking the normal version
 	{
-		m_stencilWrite->Bind();
+		if (m_drawOutline) m_stencilWrite->Bind();
 		m_deviceContext->PSSetShader(Engine::GetGFX()->m_scenePixelShader.GetShader(), NULL, 0);
 
 		for (int i = 0; i < m_meshes.size(); ++i)
@@ -99,8 +100,9 @@ void VisibleGameObject::Render()
 			m_meshes[i]->Render();
 		}
 	}
-
+	
 	// Pass 2: Drawing the red outline with the mask
+	if (m_drawOutline)
 	{
 		DirectX::XMFLOAT3 oldScale = GetScaleF3();
 		SetScale(oldScale.x + 0.02f, oldScale.y + 0.02f, oldScale.z + 0.02f);
@@ -158,9 +160,10 @@ bool VisibleGameObject::LoadModel(const std::string& path)
 	{
 		LOG_ERROR("Error loading model: " + path);
 		AreObjectsLoading = false;
-		return false;		
+		return false;
 	}
 }
+
 
 void VisibleGameObject::LoadNode(aiNode* node, const aiScene* scene, const DirectX::XMMATRIX& parentTransform)
 {
