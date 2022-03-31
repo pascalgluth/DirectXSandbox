@@ -86,10 +86,9 @@ void VisibleGameObject::Render()
 	if (!m_loaded) return;
 
 	m_deviceContext->VSSetConstantBuffers(1, 1, m_objectCBuffer.GetBuffer());
-
+	
 	// Pass 1: Drawing and masking the normal version
 	{
-		SetScale(1.f, 1.f, 1.f);
 		m_stencilWrite->Bind();
 		m_deviceContext->PSSetShader(Engine::GetGFX()->m_scenePixelShader.GetShader(), NULL, 0);
 
@@ -103,7 +102,8 @@ void VisibleGameObject::Render()
 
 	// Pass 2: Drawing the red outline with the mask
 	{
-		SetScale(1.03f, 1.03f, 1.03f);
+		DirectX::XMFLOAT3 oldScale = GetScaleF3();
+		SetScale(oldScale.x + 0.02f, oldScale.y + 0.02f, oldScale.z + 0.02f);
 		m_stencilMask->Bind();
 		m_deviceContext->PSSetShader(Engine::GetGFX()->m_solidColorPS.GetShader(), NULL, 0);
 	
@@ -113,6 +113,7 @@ void VisibleGameObject::Render()
 			m_objectCBuffer.ApplyChanges();
 			m_meshes[i]->Render();
 		}
+		SetScale(oldScale.x, oldScale.y, oldScale.z);
 	}
 }
 
