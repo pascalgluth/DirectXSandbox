@@ -17,4 +17,5 @@ namespace Gui
     void RenderLoadFileDialog();
     void RenderSaveSceneMenu();
     void RenderLogWindow();
+    void SetSelectedObject(const std::string& string, VisibleGameObject* pickedObj);
 }

@@ -67,6 +67,9 @@ public:
 
     void DeleteObjectByName(const std::string& name);
 
+    VisibleGameObject* Pick(int mouseX, int mouseY);
+    std::string GetObjectName(GameObject* object);
+
 private:
     ID3D11Device* m_device = nullptr;
     ID3D11DeviceContext* m_deviceContext = nullptr;

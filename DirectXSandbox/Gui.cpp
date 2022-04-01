@@ -419,3 +419,17 @@ void Gui::RenderLogWindow()
 	}
 	ImGui::End();
 }
+
+void Gui::SetSelectedObject(const std::string& string, VisibleGameObject* pickedObj)
+{
+	if (selectedObjectPtr)
+	{
+		if (VisibleGameObject* currentVisObj = dynamic_cast<VisibleGameObject*>(selectedObjectPtr))
+			currentVisObj->SetDrawOutline(false);
+	}
+				
+	selectedObject = string;
+	selectedObjectPtr = pickedObj;
+	if (VisibleGameObject* currentVisObj = dynamic_cast<VisibleGameObject*>(selectedObjectPtr))
+		currentVisObj->SetDrawOutline(true);
+}

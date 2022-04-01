@@ -7,6 +7,7 @@
 #include "Gui.h"
 #include "ObjectManager.h"
 #include "DirectoryHelperMacros.h"
+#include "Engine.h"
 
 Graphics::~Graphics()
 {
@@ -53,6 +54,14 @@ void Graphics::UpdateScene(float dt)
     if (m_tracker.rightButton == Mouse::ButtonStateTracker::RELEASED)
     {
         DirectX::Mouse::Get().SetMode(Mouse::MODE_ABSOLUTE);
+    }
+
+    if (m_tracker.leftButton == Mouse::ButtonStateTracker::PRESSED)
+    {
+        if (VisibleGameObject* pickedObj = Engine::GetObjectManager()->Pick(mouse.x, mouse.y))
+        {
+            Gui::SetSelectedObject(Engine::GetObjectManager()->GetObjectName(pickedObj), pickedObj);
+        }
     }
 
     float speed = 0.1f;
@@ -110,7 +119,7 @@ void Graphics::RenderFrame(ObjectManager* pObjectManager)
 
     pObjectManager->Render();
 
-    m_rigidBodyObject.Render(0);
+    //m_rigidBodyObject.Render(0);
 
     //m_ambientLight.Render();
     //m_spotLight.Render();

@@ -25,7 +25,7 @@ Texture::Texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const
     else
     {
         hr = DirectX::CreateWICTextureFromFile(device, wfilepath.c_str(), m_texture.GetAddressOf(), m_textureView.GetAddressOf());
-        deviceContext->GenerateMips(m_textureView.Get()); 
+        //deviceContext->GenerateMips(m_textureView.Get()); 
     }
 
     if (FAILED(hr))

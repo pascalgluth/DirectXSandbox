@@ -29,6 +29,7 @@ class Graphics
 {
 public:
     friend class VisibleGameObject;
+    friend class ObjectManager;
     
     ~Graphics();
     void Initialize(HWND hWnd, int width, int height);
