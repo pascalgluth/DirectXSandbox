@@ -50,19 +50,12 @@ SkyBox::~SkyBox()
     m_rasterizerState->Release();
 }
 
-void SkyBox::Render()
+void SkyBox::Render(UINT technique)
 {
-    m_deviceContext->IASetInputLayout(m_vertexShader.GetInputLayout());
-    m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    m_deviceContext->PSSetShaderResources(0, 1, &m_cubeMap);
+    if (technique == 0)
+        SetTechniqueRenderSkybox();
     
-    m_deviceContext->VSSetShader(m_vertexShader.GetShader(), NULL, 0);
-    m_deviceContext->PSSetShader(m_pixelShader.GetShader(), NULL, 0);
-
-    m_deviceContext->RSSetState(m_rasterizerState);
-    
-    VisibleGameObject::Render();
+    //VisibleGameObject::Render();
 }
 
 void SkyBox::CreateSphere(int latlines, int longlines)
@@ -162,4 +155,19 @@ void SkyBox::CreateSphere(int latlines, int longlines)
     std::vector<Texture> notextures;
 
     m_meshes.emplace_back(new Mesh(m_device, m_deviceContext, vertices, indices, notextures, XMMatrixIdentity()));
+}
+
+void SkyBox::SetTechniqueRenderSkybox()
+{
+    // Pass 0
+    {
+        m_deviceContext->VSSetConstantBuffers(1, 1, m_objectCBuffer.GetBuffer());
+        m_deviceContext->IASetInputLayout(m_vertexShader.GetInputLayout());
+        m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        m_deviceContext->PSSetShaderResources(0, 1, &m_cubeMap);
+        m_deviceContext->VSSetShader(m_vertexShader.GetShader(), NULL, 0);
+        m_deviceContext->PSSetShader(m_pixelShader.GetShader(), NULL, 0);
+        m_deviceContext->RSSetState(m_rasterizerState);
+        RenderMeshes();
+    }
 }

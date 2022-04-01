@@ -27,7 +27,7 @@ public:
 	virtual bool Init(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	~VisibleGameObject() override;
 
-	virtual void Render();
+	virtual void Render(UINT technique);
 
 	bool LoadTexture(const std::string& path);
 	bool LoadModel(const std::string& path);
@@ -63,4 +63,9 @@ protected:
 	Stencil* m_stencilMask = nullptr;
 	Stencil* m_stencilWrite = nullptr;
 
+	void RenderMeshes();
+	
+	void SetTechniqueDrawNormal();
+	void SetTechniqueDrawOutline();
+	
 };

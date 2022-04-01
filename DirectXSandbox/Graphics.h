@@ -46,6 +46,7 @@ public:
     ID3D11DeviceContext* GetDeviceContext() { return m_deviceContext; }
 
     ID3D11DepthStencilState* GetDefaultDepthStencil() { return m_depthStencilState; }
+    void ClearDepthBuffer() { m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0); }
     
 private:
     HWND m_hwnd;

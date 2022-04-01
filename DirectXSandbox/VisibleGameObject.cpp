@@ -81,42 +81,16 @@ VisibleGameObject::~VisibleGameObject()
 	}
 }
 
-void VisibleGameObject::Render()
+void VisibleGameObject::Render(UINT technique)
 {
 	if (!m_loaded) return;
-	
-	m_deviceContext->OMSetDepthStencilState(Engine::GetGFX()->GetDefaultDepthStencil(), 0xFF);
-	m_deviceContext->VSSetConstantBuffers(1, 1, m_objectCBuffer.GetBuffer());
-	
-	// Pass 1: Drawing and masking the normal version
-	{
-		if (m_drawOutline) m_stencilWrite->Bind();
-		m_deviceContext->PSSetShader(Engine::GetGFX()->m_scenePixelShader.GetShader(), NULL, 0);
 
-		for (int i = 0; i < m_meshes.size(); ++i)
-		{
-			m_objectCBuffer.Data.worldMatrix = m_meshes[i]->GetTransform() * m_worldMatrix;
-			m_objectCBuffer.ApplyChanges();
-			m_meshes[i]->Render();
-		}
-	}
-	
-	// Pass 2: Drawing the red outline with the mask
-	if (m_drawOutline)
-	{
-		DirectX::XMFLOAT3 oldScale = GetScaleF3();
-		SetScale(oldScale.x + 0.02f, oldScale.y + 0.02f, oldScale.z + 0.02f);
-		m_stencilMask->Bind();
-		m_deviceContext->PSSetShader(Engine::GetGFX()->m_solidColorPS.GetShader(), NULL, 0);
-	
-		for (int i = 0; i < m_meshes.size(); ++i)
-		{
-			m_objectCBuffer.Data.worldMatrix = m_meshes[i]->GetTransform() * m_worldMatrix;
-			m_objectCBuffer.ApplyChanges();
-			m_meshes[i]->Render();
-		}
-		SetScale(oldScale.x, oldScale.y, oldScale.z);
-	}
+
+	if (technique == 0)
+		SetTechniqueDrawNormal();
+
+	if (technique == 1)
+		if (m_drawOutline) SetTechniqueDrawOutline();
 }
 
 bool VisibleGameObject::LoadTexture(const std::string& path)
@@ -186,7 +160,6 @@ Mesh* VisibleGameObject::LoadMesh(aiMesh* mesh, const aiScene* scene, const Dire
 	std::vector<Vertex> vertices;
 	std::vector<DWORD> indices;
 
-
 	for (UINT i = 0; i < mesh->mNumVertices; ++i)
 	{
 		Vertex v;
@@ -255,4 +228,46 @@ void VisibleGameObject::UpdateMatrix()
 					DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 
 	UpdateDirectionVectors();
+}
+
+void VisibleGameObject::RenderMeshes()
+{
+	for (int i = 0; i < m_meshes.size(); ++i)
+	{
+		m_objectCBuffer.Data.worldMatrix = m_meshes[i]->GetTransform() * m_worldMatrix;
+		m_objectCBuffer.ApplyChanges();
+		m_meshes[i]->Render();
+	}
+}
+
+void VisibleGameObject::SetTechniqueDrawNormal()
+{
+	// Pass 0
+	{
+		m_deviceContext->VSSetConstantBuffers(1, 1, m_objectCBuffer.GetBuffer());
+		m_deviceContext->OMSetDepthStencilState(Engine::GetGFX()->GetDefaultDepthStencil(), 0xFF);
+		m_deviceContext->PSSetShader(Engine::GetGFX()->m_scenePixelShader.GetShader(), NULL, 0);
+		RenderMeshes();
+	}
+}
+
+void VisibleGameObject::SetTechniqueDrawOutline()
+{
+	// Pass 0
+	{
+		Engine::GetGFX()->ClearDepthBuffer();
+		m_stencilWrite->Bind();
+		m_deviceContext->PSSetShader(NULL, NULL, 0);
+		RenderMeshes();
+	}
+	
+	// Pass 1
+	{
+		DirectX::XMFLOAT3 oldScale = GetScaleF3();
+		SetScale(oldScale.x + 0.02f, oldScale.y + 0.02f, oldScale.z + 0.02f);
+		m_stencilMask->Bind();
+		m_deviceContext->PSSetShader(Engine::GetGFX()->m_solidColorPS.GetShader(), NULL, 0);
+		RenderMeshes();
+		SetScale(oldScale.x, oldScale.y, oldScale.z);
+	}
 }

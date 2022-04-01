@@ -95,7 +95,7 @@ void Graphics::RenderFrame(ObjectManager* pObjectManager)
     if (!m_globalCBuffer.ApplyChanges()) return;
     m_deviceContext->VSSetConstantBuffers(0, 1, m_globalCBuffer.GetBuffer());
 
-    //m_skyBox.Render();
+    m_skyBox.Render(0);
 
     m_deviceContext->IASetInputLayout(m_sceneVertexShader.GetInputLayout());
     m_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -109,7 +109,7 @@ void Graphics::RenderFrame(ObjectManager* pObjectManager)
 
     pObjectManager->Render();
 
-    m_rigidBodyObject.Render();
+    m_rigidBodyObject.Render(0);
 
     //m_ambientLight.Render();
     //m_spotLight.Render();

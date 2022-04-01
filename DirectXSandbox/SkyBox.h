@@ -11,10 +11,12 @@ public:
     bool Init(ID3D11Device* device, ID3D11DeviceContext* deviceContext) override;
     ~SkyBox() override;
     
-    void Render() override;
+    void Render(UINT technique) override;
     
 private:
     void CreateSphere(int latlines, int longlines);
+
+    void SetTechniqueRenderSkybox();
 
     VertexShader m_vertexShader;
     PixelShader m_pixelShader;

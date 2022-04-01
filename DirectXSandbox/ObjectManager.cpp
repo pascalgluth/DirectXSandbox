@@ -37,7 +37,18 @@ void ObjectManager::Render()
     {
         if (VisibleGameObject* visibleObject = dynamic_cast<VisibleGameObject*>(itr->second))
         {
-            visibleObject->Render();
+            visibleObject->Render(0);
+        }
+        
+        ++itr;
+    }
+
+    itr = m_objects.begin();
+    while (itr != m_objects.end())
+    {
+        if (VisibleGameObject* visibleObject = dynamic_cast<VisibleGameObject*>(itr->second))
+        {
+            visibleObject->Render(1);
         }
         
         ++itr;
