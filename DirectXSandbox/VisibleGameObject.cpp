@@ -183,7 +183,7 @@ Mesh* VisibleGameObject::LoadMesh(aiMesh* mesh, const aiScene* scene, const Dire
 		if (material->GetTexture(aiTextureType_SPECULAR, 0, &textureFileName) == aiReturn_SUCCESS)
 		{
 			stdTextureFileName = textureFileName.C_Str();
-			texturesForMesh.emplace_back(m_device, FILE_TEXTURE(stdTextureFileName), 1);
+			texturesForMesh.emplace_back(m_device, m_deviceContext, FILE_TEXTURE(stdTextureFileName), 1);
 		}
 
 		aiReturn ret = material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFileName);
@@ -191,7 +191,7 @@ Mesh* VisibleGameObject::LoadMesh(aiMesh* mesh, const aiScene* scene, const Dire
 		if (ret == aiReturn_SUCCESS)
 		{
 			stdTextureFileName = textureFileName.C_Str();
-			texturesForMesh.emplace_back(m_device, FILE_TEXTURE(stdTextureFileName), 0);
+			texturesForMesh.emplace_back(m_device, m_deviceContext, FILE_TEXTURE(stdTextureFileName), 0);
 		}
 	}
 

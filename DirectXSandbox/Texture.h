@@ -8,7 +8,7 @@
 class Texture
 {
 public:
-    Texture(ID3D11Device* device, const std::string& filePath, UINT slot);
+    Texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const std::string& filePath, UINT slot);
     Texture(ID3D11Device* device, UINT r, UINT g, UINT b, UINT a, UINT slot);
     ~Texture();
 

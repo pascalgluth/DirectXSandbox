@@ -13,7 +13,7 @@ bool checkFileExtension(const std::string& name, const std::string& extension)
     return false;
 }
 
-Texture::Texture(ID3D11Device* device, const std::string& filePath, UINT slot)
+Texture::Texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const std::string& filePath, UINT slot)
 {
     m_slot = slot;
     
@@ -23,12 +23,16 @@ Texture::Texture(ID3D11Device* device, const std::string& filePath, UINT slot)
     if (checkFileExtension(filePath, "dds"))
         hr = DirectX::CreateDDSTextureFromFile(device, wfilepath.c_str(), m_texture.GetAddressOf(), m_textureView.GetAddressOf());
     else
+    {
         hr = DirectX::CreateWICTextureFromFile(device, wfilepath.c_str(), m_texture.GetAddressOf(), m_textureView.GetAddressOf());
+        deviceContext->GenerateMips(m_textureView.Get()); 
+    }
 
     if (FAILED(hr))
     {
         LOG_ERROR_HR("Failed to load texture: " + filePath + ".", hr);
         CreateColorTexture(device, 255, 0, 0, 255);
+        return;
     }
 }
 
