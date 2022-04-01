@@ -1,5 +1,7 @@
 ﻿#include "ObjectManager.h"
 
+#include "Engine.h"
+
 ObjectManager::ObjectManager(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {
     m_device = device;
@@ -42,6 +44,8 @@ void ObjectManager::Render()
         
         ++itr;
     }
+
+    Engine::GetGFX()->ClearDepthBuffer();
 
     itr = m_objects.begin();
     while (itr != m_objects.end())

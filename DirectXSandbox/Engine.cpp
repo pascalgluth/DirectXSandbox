@@ -42,26 +42,6 @@ namespace Engine
         mySound = new GameplayStatics::Sound(FILE_OTHER("dog_sound.wav"));
         //GameplayStatics::PlaySound2D(mySound);
         //GameplayStatics::PlaySound3D(mySound, gfx->GetCamPos());
-
-        /*VisibleGameObject* block1 = objManager->CreateVisibleObject<VisibleGameObject>("block1", FILE_MODEL("Lowpoly_City_Free_Pack.fbx"), FILE_TEXTURE("Palette.jpg"));
-        VisibleGameObject* block2 = objManager->CreateVisibleObject<VisibleGameObject>("block2", FILE_MODEL("Lowpoly_City_Free_Pack.fbx"), FILE_TEXTURE("Palette.jpg"));
-        if (block2)
-        {
-            block2->SetPosition(block1->GetPosition());
-            block2->AddOffset(2150.f, 0.f, 0.f);
-        }
-        VisibleGameObject* block3 = objManager->CreateVisibleObject<VisibleGameObject>("block3", FILE_MODEL("Lowpoly_City_Free_Pack.fbx"), FILE_TEXTURE("Palette.jpg"));
-        if (block3)
-        {
-            block3->SetPosition(block1->GetPosition());
-            block3->AddOffset(2150.f, 0.f, -2150.f);
-        }
-        VisibleGameObject* block4 = objManager->CreateVisibleObject<VisibleGameObject>("block4", FILE_MODEL("Lowpoly_City_Free_Pack.fbx"), FILE_TEXTURE("Palette.jpg"));
-        if (block4)
-        {
-            block4->SetPosition(block1->GetPosition());
-            block4->AddOffset(0.f, 0.f, -2150.f);
-        }*/
     }
 
     void QueueResize(int width, int height)
@@ -73,6 +53,7 @@ namespace Engine
 
     void Shutdown()
     {
+        delete objManager;
         delete gfx;
     }
 

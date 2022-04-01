@@ -75,10 +75,13 @@ bool VisibleGameObject::Init(ID3D11Device* device, ID3D11DeviceContext* deviceCo
 
 VisibleGameObject::~VisibleGameObject()
 {
-	for (int i = 0; i < m_textures.size(); ++i)
+	for (int i = 0; i < m_meshes.size(); ++i)
 	{
-		m_textures[i]->Release();
+		delete m_meshes[i];
 	}
+
+	delete m_stencilMask;
+	delete m_stencilWrite;
 }
 
 void VisibleGameObject::Render(UINT technique)
@@ -91,26 +94,6 @@ void VisibleGameObject::Render(UINT technique)
 
 	if (technique == 1)
 		if (m_drawOutline) SetTechniqueDrawOutline();
-}
-
-bool VisibleGameObject::LoadTexture(const std::string& path)
-{
-	std::wstring wpath(path.begin(), path.end());
-
-	ID3D11ShaderResourceView* texture;
-	
-	HRESULT hr = DirectX::CreateWICTextureFromFile(m_device, wpath.c_str(), nullptr, &texture);
-	if (FAILED(hr))
-	{
-		LOG_ERROR_HR("Failed to load texture: " + path, hr);
-		return false;
-	}
-
-	m_deviceContext->GenerateMips(texture);
-
-	m_textures.push_back(texture);
-
-	return true;
 }
 
 bool VisibleGameObject::LoadModel(const std::string& path)
@@ -255,7 +238,7 @@ void VisibleGameObject::SetTechniqueDrawOutline()
 {
 	// Pass 0
 	{
-		Engine::GetGFX()->ClearDepthBuffer();
+		m_deviceContext->VSSetConstantBuffers(1, 1, m_objectCBuffer.GetBuffer());
 		m_stencilWrite->Bind();
 		m_deviceContext->PSSetShader(NULL, NULL, 0);
 		RenderMeshes();

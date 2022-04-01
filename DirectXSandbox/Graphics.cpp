@@ -11,7 +11,8 @@
 Graphics::~Graphics()
 {
     Gui::Shutdown();
-
+    
+    m_samplerState->Release();
     m_depthStencilBuffer->Release();
     m_depthStencilView->Release();
     m_depthStencilState->Release();

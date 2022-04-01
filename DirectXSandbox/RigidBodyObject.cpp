@@ -1,5 +1,9 @@
 ﻿#include "RigidBodyObject.h"
 
+RigidBodyObject::~RigidBodyObject()
+{
+}
+
 void RigidBodyObject::SetupPhysics(PhysicsCommon* physicsCommon, PhysicsWorld* physicsWorld)
 {
     DirectX::XMFLOAT3 pos = GetPositonF3();

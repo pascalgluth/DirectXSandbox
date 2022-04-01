@@ -25,11 +25,10 @@ public:
 		ID3D11DeviceContext* deviceContext);
 	bool InitAsync(const std::string& model, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 	virtual bool Init(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-	~VisibleGameObject() override;
+	virtual ~VisibleGameObject() override;
 
 	virtual void Render(UINT technique);
 
-	bool LoadTexture(const std::string& path);
 	bool LoadModel(const std::string& path);
 	void LoadNode(struct aiNode* node, const struct aiScene* scene, const DirectX::XMMATRIX& parentTransform);
 	Mesh* LoadMesh(struct aiMesh* mesh, const aiScene* scene, const DirectX::XMMATRIX& parentTransform);
@@ -55,7 +54,6 @@ protected:
 	ID3D11DeviceContext* m_deviceContext = nullptr;
 
 	std::vector<Mesh*> m_meshes;
-	std::vector<ID3D11ShaderResourceView*> m_textures;
 	DirectX::XMMATRIX m_worldMatrix = DirectX::XMMatrixIdentity();
 	ConstantBuffer<ObjectCBuffer> m_objectCBuffer;
 

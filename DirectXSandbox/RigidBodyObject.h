@@ -9,6 +9,7 @@ using namespace reactphysics3d;
 class RigidBodyObject : public VisibleGameObject
 {
 public:
+	~RigidBodyObject() override;
 	void SetupPhysics(PhysicsCommon* physicsCommon, PhysicsWorld* physicsWorld);
 	void Update(float dt);
 

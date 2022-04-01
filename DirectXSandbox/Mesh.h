@@ -23,6 +23,7 @@ public:
 private:
 	ID3D11Device* m_device;
 	ID3D11DeviceContext* m_deviceContext;
+	
 	ID3D11Buffer* m_vertexBuffer = nullptr;
 	ID3D11Buffer* m_indexBuffer = nullptr;
 
