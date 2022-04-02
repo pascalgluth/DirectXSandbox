@@ -90,18 +90,6 @@
     <ClInclude Include="DirectoryHelperMacros.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imgui_impl_sdl.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Input\EventDelegate.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Input\Keyboard.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Input\Mouse.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="ObjectManager.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -182,15 +170,6 @@
     <ClCompile Include="RigidBodyObject.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui_impl_sdl.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Input\Keyboard.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Input\Mouse.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="ObjectManager.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -206,7 +185,6 @@
     <FxCompile Include="shaders\vertexshader.hlsl" />
     <FxCompile Include="shaders\skyboxps.hlsl" />
     <FxCompile Include="shaders\skyboxvs.hlsl" />
-    <FxCompile Include="shaders\solidPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\LightEffects.hlsl" />

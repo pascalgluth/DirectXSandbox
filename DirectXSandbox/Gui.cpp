@@ -4,6 +4,7 @@
 #include "DirectoryHelperMacros.h"
 #include "Engine.h"
 #include "Logger.h"
+#include "NetworkManager.h"
 #include "ObjectManager.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
@@ -304,6 +305,7 @@ void Gui::RenderObjectInspector()
 			{
 				selectedObjectPtr = nullptr;
 				Engine::GetObjectManager()->DeleteObjectByName(selectedObject);
+				NetworkManager::ExecuteCommandMulticast(CMD_DELETEOBJ, selectedObject);
 				selectedObject = "";
 				ImGui::End();
 				return;
@@ -365,6 +367,7 @@ void Gui::RenderLoadFileDialog()
 		selectedObject = "";
 		selectedObjectPtr = nullptr;
 		Engine::LoadScene(scenePath);
+		NetworkManager::ExecuteCommandMulticast(CMD_LOADSCENE, scenePath);
 		fileDialog.ClearSelected();
 	}
 }

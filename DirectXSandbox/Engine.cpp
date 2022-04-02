@@ -8,6 +8,7 @@
 #include "Logger.h"
 #include "ObjectManager.h"
 #include "SerializedTypes.h"
+#include "NetworkManager.h"
 
 namespace Engine
 {
@@ -17,6 +18,7 @@ namespace Engine
     int newWidth;
     int newHeight;
     bool resizeQueued = false;
+    bool networkUpdate = false;
 
     std::unique_ptr<DirectX::Keyboard> keyboard;
     std::unique_ptr<DirectX::Mouse> mouse;
@@ -25,6 +27,8 @@ namespace Engine
     
     void Initialize(HWND _hWnd, int width, int height)
     {
+        srand(time(0));
+        
         resizeQueued = false;
         hWnd = _hWnd;
 
@@ -42,6 +46,14 @@ namespace Engine
         mySound = new GameplayStatics::Sound(FILE_OTHER("dog_sound.wav"));
         //GameplayStatics::PlaySound2D(mySound);
         //GameplayStatics::PlaySound3D(mySound, gfx->GetCamPos());
+
+        
+#ifdef _SERVER
+        NetworkManager::Init("localhost", 6666, MODE_SERVER);
+#else
+        NetworkManager::Init("localhost", 6666, MODE_CLIENT);
+#endif
+        
     }
 
     void QueueResize(int width, int height)
@@ -55,11 +67,14 @@ namespace Engine
     {
         delete objManager;
         delete gfx;
+        NetworkManager::Shutdown();
     }
 
     void Update()
     {
         // todo: use the correct delta time....
+
+        NetworkManager::Update();
         
         objManager->Update(0);
         gfx->UpdateScene(0);
